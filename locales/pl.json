@@ -1,0 +1,60 @@
+{
+  "app": {
+    "title": "Languages AI",
+    "switchToPl": "PL",
+    "switchToEn": "EN",
+    "themeLight": "Jasny",
+    "themeDark": "Ciemny"
+  },
+  "nav": {
+    "home": "Start",
+    "auth": "Logowanie",
+    "profile": "Profil"
+  },
+  "home": {
+    "title": "Aplikacja gotowa do dalszego rozwoju",
+    "description": "Skonfigurowano i18n, Vuetify oraz bazową strukturę widoków.",
+    "goAuth": "Przejdź do auth",
+    "goProfile": "Przejdź do profilu"
+  },
+  "auth": {
+    "title": "Autoryzacja",
+    "subtitle": "Wybierz akcję.",
+    "login": "Zaloguj się",
+    "register": "Załóż konto"
+  },
+  "login": {
+    "title": "Logowanie",
+    "email": "E-mail",
+    "password": "Hasło",
+    "submit": "Zaloguj",
+    "forgotPassword": "Nie pamiętasz hasła?"
+  },
+  "register": {
+    "title": "Rejestracja",
+    "email": "E-mail",
+    "password": "Hasło",
+    "submit": "Utwórz konto"
+  },
+  "profile": {
+    "title": "Profil użytkownika",
+    "description": "Tutaj możesz dodać dane użytkownika i statystyki nauki.",
+    "nick": "Nick",
+    "appLanguage": "Język aplikacji",
+    "learningLanguage": "Język, którego chcesz się uczyć",
+    "uid": "ID użytkownika",
+    "email": "E-mail",
+    "createdAt": "Data utworzenia konta",
+    "save": "Zapisz profil",
+    "saveSuccess": "Profil został zapisany.",
+    "logout": "Wyloguj"
+  },
+  "resetPassword": {
+    "title": "Reset hasła",
+    "subtitle": "Wpisz e-mail konta, a wyślemy link do ustawienia nowego hasła.",
+    "email": "E-mail",
+    "submit": "Wyślij link resetujący",
+    "success": "Wysłaliśmy link do resetu hasła. Sprawdź swoją skrzynkę.",
+    "backToLogin": "Wróć do logowania"
+  }
+}

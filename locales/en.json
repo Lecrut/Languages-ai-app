@@ -1,0 +1,60 @@
+{
+  "app": {
+    "title": "Languages AI",
+    "switchToPl": "PL",
+    "switchToEn": "EN",
+    "themeLight": "Light",
+    "themeDark": "Dark"
+  },
+  "nav": {
+    "home": "Home",
+    "auth": "Auth",
+    "profile": "Profile"
+  },
+  "home": {
+    "title": "Application initialized for next steps",
+    "description": "i18n, Vuetify, and a base page structure are configured.",
+    "goAuth": "Open auth",
+    "goProfile": "Open profile"
+  },
+  "auth": {
+    "title": "Authentication",
+    "subtitle": "Choose your action.",
+    "login": "Sign in",
+    "register": "Create account"
+  },
+  "login": {
+    "title": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "forgotPassword": "Forgot password?"
+  },
+  "register": {
+    "title": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Create account"
+  },
+  "profile": {
+    "title": "User profile",
+    "description": "Add user data and learning stats here.",
+    "nick": "Nickname",
+    "appLanguage": "App language",
+    "learningLanguage": "Language you want to learn",
+    "uid": "User ID",
+    "email": "Email",
+    "createdAt": "Account created at",
+    "save": "Save profile",
+    "saveSuccess": "Profile has been saved.",
+    "logout": "Sign out"
+  },
+  "resetPassword": {
+    "title": "Reset password",
+    "subtitle": "Enter your account email and we will send a password reset link.",
+    "email": "Email",
+    "submit": "Send reset link",
+    "success": "Password reset link sent. Check your inbox.",
+    "backToLogin": "Back to sign in"
+  }
+}
