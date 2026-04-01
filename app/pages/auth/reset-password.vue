@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { getFirstFormError, hasFormValidationErrors } from '../../helpers/form'
+import { getFirebaseAuthErrorKey } from '../../helpers/firebase-auth-error-key'
+import { emailRule, requiredRule } from '../../helpers/rules'
 import { useAuthStore } from '../../stores/use-auth-store'
+import { useSnackbarStore } from '../../stores/use-snackbar-store'
 
 definePageMeta({
   middleware: 'guest',
@@ -8,12 +12,31 @@ definePageMeta({
 const { t } = useI18n()
 const localePath = useLocalePath()
 const authStore = useAuthStore()
+const snackbarStore = useSnackbarStore()
 
 const email = ref('')
-const success = ref(false)
+
+const emailRules = computed(() => [
+  requiredRule(t('validation.required')),
+  emailRule(t('validation.email')),
+])
+
+const resetFields = computed(() => [
+  {
+    value: email.value,
+    rules: emailRules.value,
+  },
+])
+
+const isSubmitDisabled = computed(() => hasFormValidationErrors(resetFields.value))
 
 const handleResetPassword = async () => {
-  success.value = false
+  const firstError = getFirstFormError(resetFields.value)
+
+  if (firstError) {
+    snackbarStore.showError(firstError)
+    return
+  }
 
   try {
     const redirectUrl = import.meta.client
@@ -21,10 +44,10 @@ const handleResetPassword = async () => {
       : undefined
 
     await authStore.resetPassword(email.value, redirectUrl)
-    success.value = true
+    snackbarStore.showSuccess(t('resetPassword.success'))
   }
-  catch {
-    // Error message is handled in the store and shown in the alert.
+  catch (caughtError) {
+    snackbarStore.showError(t(getFirebaseAuthErrorKey(caughtError)))
   }
 }
 </script>
@@ -38,27 +61,10 @@ const handleResetPassword = async () => {
         <VCardText>
           <p class="text-body-2 mb-4 text-center">{{ t('resetPassword.subtitle') }}</p>
 
-          <VAlert
-            v-if="authStore.error"
-            type="error"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ authStore.error }}
-          </VAlert>
-
-          <VAlert
-            v-if="success"
-            type="success"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ t('resetPassword.success') }}
-          </VAlert>
-
           <VTextField
             v-model="email"
             :label="t('resetPassword.email')"
+            :rules="emailRules"
             type="email"
             variant="outlined"
             prepend-inner-icon="mdi-email-outline"
@@ -71,7 +77,7 @@ const handleResetPassword = async () => {
             size="large"
             class="px-10"
             :loading="authStore.loading"
-            :disabled="!email"
+            :disabled="isSubmitDisabled"
             @click="handleResetPassword"
           >
             {{ t('resetPassword.submit') }}

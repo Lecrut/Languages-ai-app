@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { getFirstFormError, hasFormValidationErrors } from '../../helpers/form'
+import { getFirebaseAuthErrorKey } from '../../helpers/firebase-auth-error-key'
+import { emailRule, minLengthRule, requiredRule, sameAsRule } from '../../helpers/rules'
 import { useAuthStore } from '../../stores/use-auth-store'
+import { useSnackbarStore } from '../../stores/use-snackbar-store'
 
 definePageMeta({
   middleware: 'guest',
@@ -8,17 +12,44 @@ definePageMeta({
 const { t } = useI18n()
 const localePath = useLocalePath()
 const authStore = useAuthStore()
+const snackbarStore = useSnackbarStore()
 const router = useRouter()
 
 const username = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const passwordsMismatch = computed(() => Boolean(confirmPassword.value) && password.value !== confirmPassword.value)
-const isRegisterDisabled = computed(() => !username.value || !email.value || !password.value || !confirmPassword.value || passwordsMismatch.value)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+
+const usernameRules = computed(() => [requiredRule(t('validation.required'))])
+const emailRules = computed(() => [
+  requiredRule(t('validation.required')),
+  emailRule(t('validation.email')),
+])
+const passwordRules = computed(() => [
+  requiredRule(t('validation.required')),
+  minLengthRule(6, t('validation.passwordMinLength')),
+])
+const confirmPasswordRules = computed(() => [
+  requiredRule(t('validation.required')),
+  sameAsRule(() => password.value, t('register.passwordMismatch')),
+])
+
+const registerFields = computed(() => [
+  { value: username.value, rules: usernameRules.value },
+  { value: email.value, rules: emailRules.value },
+  { value: password.value, rules: passwordRules.value },
+  { value: confirmPassword.value, rules: confirmPasswordRules.value },
+])
+
+const isRegisterDisabled = computed(() => hasFormValidationErrors(registerFields.value))
 
 const handleRegister = async () => {
-  if (passwordsMismatch.value) {
+  const firstError = getFirstFormError(registerFields.value)
+
+  if (firstError) {
+    snackbarStore.showError(firstError)
     return
   }
 
@@ -26,8 +57,8 @@ const handleRegister = async () => {
     await authStore.register(email.value, password.value)
     await router.push(localePath('/user'))
   }
-  catch {
-    // Error message is handled in the store and shown in the alert.
+  catch (caughtError) {
+    snackbarStore.showError(t(getFirebaseAuthErrorKey(caughtError)))
   }
 }
 </script>
@@ -38,28 +69,27 @@ const handleRegister = async () => {
       <VCard>
         <VCardTitle class="text-h5 text-center my-3">{{ t('register.title') }}</VCardTitle>
         <VCardText>
-          <VAlert
-            v-if="authStore.error"
-            type="error"
-            variant="tonal"
+          <VTextField v-model="username" :label="t('register.username')" :rules="usernameRules" variant="outlined" class="mb-3" />
+          <VTextField v-model="email" :label="t('register.email')" :rules="emailRules" type="email" variant="outlined" class="mb-3" />
+          <VTextField
+            v-model="password"
+            :label="t('register.password')"
+            :rules="passwordRules"
+            :type="showPassword ? 'text' : 'password'"
+            :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+            variant="outlined"
             class="mb-3"
-          >
-            {{ authStore.error }}
-          </VAlert>
-
-          <VAlert
-            v-if="passwordsMismatch"
-            type="warning"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ t('register.passwordMismatch') }}
-          </VAlert>
-
-          <VTextField v-model="username" :label="t('register.username')" variant="outlined" class="mb-3" />
-          <VTextField v-model="email" :label="t('register.email')" type="email" variant="outlined" class="mb-3" />
-          <VTextField v-model="password" :label="t('register.password')" type="password" variant="outlined" class="mb-3" />
-          <VTextField v-model="confirmPassword" :label="t('register.confirmPassword')" type="password" variant="outlined" />
+            @click:append-inner="showPassword = !showPassword"
+          />
+          <VTextField
+            v-model="confirmPassword"
+            :label="t('register.confirmPassword')"
+            :rules="confirmPasswordRules"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
+            variant="outlined"
+            @click:append-inner="showConfirmPassword = !showConfirmPassword"
+          />
         </VCardText>
 
         <VCardActions class="justify-center pt-0">

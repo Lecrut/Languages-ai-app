@@ -88,5 +88,26 @@
     "success": "Hasło zostało zmienione. Możesz się zalogować.",
     "backToLoginPrompt": "Przejdź do logowania",
     "backToLogin": "Zaloguj się"
+  },
+  "validation": {
+    "required": "To pole jest wymagane.",
+    "email": "Wpisz poprawny adres e-mail.",
+    "passwordMinLength": "Hasło musi mieć co najmniej 6 znaków."
+  },
+  "errors": {
+    "auth": {
+      "generic": "Wystąpił błąd. Spróbuj ponownie.",
+      "invalidCredential": "Nieprawidłowy e-mail lub hasło.",
+      "wrongPassword": "Nieprawidłowe hasło.",
+      "userNotFound": "Nie ma takiego użytkownika.",
+      "emailAlreadyInUse": "Ten e-mail jest już zajęty.",
+      "invalidEmail": "Adres e-mail jest niepoprawny.",
+      "weakPassword": "Hasło jest zbyt słabe.",
+      "tooManyRequests": "Za dużo prób. Spróbuj ponownie później.",
+      "networkRequestFailed": "Błąd sieci. Sprawdź połączenie internetowe.",
+      "expiredActionCode": "Link wygasł. Poproś o nowy reset hasła.",
+      "invalidActionCode": "Nieprawidłowy lub uszkodzony link resetujący.",
+      "userDisabled": "To konto zostało zablokowane."
+    }
   }
 }

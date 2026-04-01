@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { getFirstFormError, hasFormValidationErrors } from '../../helpers/form'
+import { getFirebaseAuthErrorKey } from '../../helpers/firebase-auth-error-key'
+import { emailRule, minLengthRule, requiredRule } from '../../helpers/rules'
 import { useAuthStore } from '../../stores/use-auth-store'
+import { useSnackbarStore } from '../../stores/use-snackbar-store'
 
 definePageMeta({
   middleware: 'guest',
@@ -8,18 +12,50 @@ definePageMeta({
 const { t } = useI18n()
 const localePath = useLocalePath()
 const authStore = useAuthStore()
+const snackbarStore = useSnackbarStore()
 const router = useRouter()
 
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
+
+const emailRules = computed(() => [
+  requiredRule(t('validation.required')),
+  emailRule(t('validation.email')),
+])
+
+const passwordRules = computed(() => [
+  requiredRule(t('validation.required')),
+  minLengthRule(6, t('validation.passwordMinLength')),
+])
+
+const loginFields = computed(() => [
+  {
+    value: email.value,
+    rules: emailRules.value,
+  },
+  {
+    value: password.value,
+    rules: passwordRules.value,
+  },
+])
+
+const isSubmitDisabled = computed(() => hasFormValidationErrors(loginFields.value))
 
 const handleLogin = async () => {
+  const firstError = getFirstFormError(loginFields.value)
+
+  if (firstError) {
+    snackbarStore.showError(firstError)
+    return
+  }
+
   try {
     await authStore.login(email.value, password.value)
     await router.push(localePath('/user'))
   }
-  catch {
-    // Error message is handled in the store and shown in the alert.
+  catch (caughtError) {
+    snackbarStore.showError(t(getFirebaseAuthErrorKey(caughtError)))
   }
 }
 </script>
@@ -30,16 +66,16 @@ const handleLogin = async () => {
       <VCard>
         <VCardTitle class="text-h5 text-center my-3">{{ t('login.title') }}</VCardTitle>
         <VCardText>
-          <VAlert
-            v-if="authStore.error"
-            type="error"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ authStore.error }}
-          </VAlert>
-          <VTextField v-model="email" :label="t('login.email')" type="email" variant="outlined" class="mb-3" />
-          <VTextField v-model="password" :label="t('login.password')" type="password" variant="outlined" />
+          <VTextField v-model="email" :label="t('login.email')" :rules="emailRules" type="email" variant="outlined" class="mb-3" />
+          <VTextField
+            v-model="password"
+            :label="t('login.password')"
+            :rules="passwordRules"
+            :type="showPassword ? 'text' : 'password'"
+            :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+            variant="outlined"
+            @click:append-inner="showPassword = !showPassword"
+          />
         </VCardText>
         <VCardActions class="justify-center pt-0">
           <VBtn
@@ -47,7 +83,7 @@ const handleLogin = async () => {
             size="large"
             class="px-10"
             :loading="authStore.loading"
-            :disabled="!email || !password"
+            :disabled="isSubmitDisabled"
             @click="handleLogin"
           >
             {{ t('login.submit') }}

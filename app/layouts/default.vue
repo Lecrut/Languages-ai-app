@@ -8,6 +8,7 @@ const contentContainerClass = computed(() => (smAndDown.value ? 'py-6 pb-16' : '
 <template>
   <div>
     <AppTopBar />
+    <AppSnackbar />
 
     <VMain>
       <VContainer :class="contentContainerClass">

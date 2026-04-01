@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { getFirstFormError, hasFormValidationErrors } from '../../helpers/form'
+import { getFirebaseAuthErrorKey } from '../../helpers/firebase-auth-error-key'
+import { minLengthRule, requiredRule, sameAsRule } from '../../helpers/rules'
 import { useAuthStore } from '../../stores/use-auth-store'
+import { useSnackbarStore } from '../../stores/use-snackbar-store'
 
 definePageMeta({
   middleware: 'guest',
@@ -9,11 +13,13 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const authStore = useAuthStore()
+const snackbarStore = useSnackbarStore()
 
 const password = ref('')
 const confirmPassword = ref('')
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const codeValidated = ref(false)
-const success = ref(false)
 const resetEmail = ref('')
 
 const resetCode = computed(() => {
@@ -26,14 +32,29 @@ const resetCode = computed(() => {
   return ''
 })
 
-const passwordMismatch = computed(() => Boolean(confirmPassword.value) && password.value !== confirmPassword.value)
-const isSubmitDisabled = computed(() => !password.value || !confirmPassword.value || passwordMismatch.value || !resetCode.value)
-const hasInvalidLink = computed(() => !resetCode.value || (!codeValidated.value && Boolean(authStore.error)))
+const passwordRules = computed(() => [
+  requiredRule(t('validation.required')),
+  minLengthRule(6, t('validation.passwordMinLength')),
+])
+
+const confirmPasswordRules = computed(() => [
+  requiredRule(t('validation.required')),
+  sameAsRule(() => password.value, t('newPassword.passwordMismatch')),
+])
+
+const newPasswordFields = computed(() => [
+  { value: password.value, rules: passwordRules.value },
+  { value: confirmPassword.value, rules: confirmPasswordRules.value },
+])
+
+const hasInvalidLink = computed(() => !resetCode.value || !codeValidated.value)
+const isSubmitDisabled = computed(() => hasFormValidationErrors(newPasswordFields.value) || hasInvalidLink.value)
 
 onMounted(async () => {
   authStore.clearError()
 
   if (!resetCode.value) {
+    snackbarStore.showError(t('errors.auth.invalidActionCode'))
     return
   }
 
@@ -42,22 +63,31 @@ onMounted(async () => {
     resetEmail.value = email
     codeValidated.value = true
   }
-  catch {
-    // Error message is handled in the store and shown in the alert.
+  catch (caughtError) {
+    snackbarStore.showError(t(getFirebaseAuthErrorKey(caughtError)))
   }
 })
 
 const handleSetNewPassword = async () => {
-  if (isSubmitDisabled.value) {
+  const firstError = getFirstFormError(newPasswordFields.value)
+
+  if (firstError) {
+    snackbarStore.showError(firstError)
+    return
+  }
+
+  if (hasInvalidLink.value) {
+    snackbarStore.showError(t('errors.auth.invalidActionCode'))
     return
   }
 
   try {
     await authStore.confirmResetPassword(resetCode.value, password.value)
-    success.value = true
+    snackbarStore.showSuccess(t('newPassword.success'))
+    await navigateTo(localePath('/auth/login'))
   }
-  catch {
-    // Error message is handled in the store and shown in the alert.
+  catch (caughtError) {
+    snackbarStore.showError(t(getFirebaseAuthErrorKey(caughtError)))
   }
 }
 </script>
@@ -71,33 +101,6 @@ const handleSetNewPassword = async () => {
         <VCardText>
           <p class="text-body-2 mb-4 text-center">{{ t('newPassword.subtitle') }}</p>
 
-          <VAlert
-            v-if="authStore.error"
-            type="error"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ authStore.error }}
-          </VAlert>
-
-          <VAlert
-            v-if="success"
-            type="success"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ t('newPassword.success') }}
-          </VAlert>
-
-          <VAlert
-            v-if="passwordMismatch"
-            type="warning"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ t('newPassword.passwordMismatch') }}
-          </VAlert>
-
           <VTextField
             v-if="resetEmail"
             :model-value="resetEmail"
@@ -110,18 +113,24 @@ const handleSetNewPassword = async () => {
           <VTextField
             v-model="password"
             :label="t('newPassword.password')"
-            type="password"
+            :rules="passwordRules"
+            :type="showPassword ? 'text' : 'password'"
+            :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
             variant="outlined"
             class="mb-3"
-            :disabled="hasInvalidLink || success"
+            :disabled="hasInvalidLink"
+            @click:append-inner="showPassword = !showPassword"
           />
 
           <VTextField
             v-model="confirmPassword"
             :label="t('newPassword.confirmPassword')"
-            type="password"
+            :rules="confirmPasswordRules"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
             variant="outlined"
-            :disabled="hasInvalidLink || success"
+            :disabled="hasInvalidLink"
+            @click:append-inner="showConfirmPassword = !showConfirmPassword"
           />
         </VCardText>
 
@@ -131,7 +140,7 @@ const handleSetNewPassword = async () => {
             size="large"
             class="px-10"
             :loading="authStore.loading"
-            :disabled="isSubmitDisabled || hasInvalidLink || success"
+            :disabled="isSubmitDisabled"
             @click="handleSetNewPassword"
           >
             {{ t('newPassword.submit') }}

@@ -88,5 +88,26 @@
     "success": "Password has been changed. You can sign in now.",
     "backToLoginPrompt": "Go to sign in",
     "backToLogin": "Sign in"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "email": "Enter a valid email address.",
+    "passwordMinLength": "Password must be at least 6 characters long."
+  },
+  "errors": {
+    "auth": {
+      "generic": "Something went wrong. Please try again.",
+      "invalidCredential": "Invalid email or password.",
+      "wrongPassword": "Incorrect password.",
+      "userNotFound": "User does not exist.",
+      "emailAlreadyInUse": "This email is already in use.",
+      "invalidEmail": "Email address is invalid.",
+      "weakPassword": "Password is too weak.",
+      "tooManyRequests": "Too many attempts. Try again later.",
+      "networkRequestFailed": "Network error. Check your internet connection.",
+      "expiredActionCode": "Reset link has expired. Request a new one.",
+      "invalidActionCode": "Invalid or malformed reset link.",
+      "userDisabled": "This account has been disabled."
+    }
   }
 }
