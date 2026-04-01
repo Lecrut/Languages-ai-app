@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useUserProfileStore } from '../../stores/use-user-profile-store'
+import {
+  TASKS_PER_SESSION_DEFAULT,
+  TASKS_PER_SESSION_MAX,
+  TASKS_PER_SESSION_MIN,
+  clampTasksPerSession,
+} from '../../constants/task-session-settings'
 
 definePageMeta({
   middleware: 'auth',
@@ -14,6 +20,7 @@ const router = useRouter()
 const nick = ref('')
 const appLanguage = ref('pl')
 const learningLanguage = ref('en')
+const tasksPerSession = ref(TASKS_PER_SESSION_DEFAULT)
 const profileEmail = ref('')
 const saveSuccess = ref(false)
 
@@ -47,8 +54,16 @@ const fillFormFromProfile = () => {
   nick.value = userProfileStore.profile.nick
   appLanguage.value = userProfileStore.profile.appLanguage
   learningLanguage.value = userProfileStore.profile.learningLanguage
+  tasksPerSession.value = clampTasksPerSession(userProfileStore.profile.tasksPerSession)
   profileEmail.value = userProfileStore.profile.email
 }
+
+const canSaveProfile = computed(() => Boolean(
+  nick.value
+  && profileEmail.value
+  && tasksPerSession.value >= TASKS_PER_SESSION_MIN
+  && tasksPerSession.value <= TASKS_PER_SESSION_MAX,
+))
 
 onMounted(async () => {
   if (!authStore.user) {
@@ -71,6 +86,7 @@ const handleSaveProfile = async () => {
       nick: nick.value,
       appLanguage: appLanguage.value,
       learningLanguage: learningLanguage.value,
+      tasksPerSession: clampTasksPerSession(tasksPerSession.value),
       email: profileEmail.value,
     })
 
@@ -161,6 +177,23 @@ const handleLogout = async () => {
                 :disabled="userProfileStore.loading"
               />
             </VCol>
+
+            <VCol cols="12">
+              <VSlider
+                v-model="tasksPerSession"
+                :label="t('profile.tasksPerSession')"
+                :min="TASKS_PER_SESSION_MIN"
+                :max="TASKS_PER_SESSION_MAX"
+                :step="1"
+                :thumb-label="true"
+                color="primary"
+                :disabled="userProfileStore.loading"
+                class="mt-2"
+              />
+              <div class="text-caption text-medium-emphasis">
+                {{ t('profile.tasksPerSessionHint', { min: TASKS_PER_SESSION_MIN, max: TASKS_PER_SESSION_MAX }) }}
+              </div>
+            </VCol>
           </VRow>
 
           <VDivider class="my-4" />
@@ -172,7 +205,7 @@ const handleLogout = async () => {
           <VBtn
             color="primary"
             :loading="userProfileStore.saving || userProfileStore.loading"
-            :disabled="!nick || !profileEmail"
+            :disabled="!canSaveProfile"
             @click="handleSaveProfile"
           >
             {{ t('profile.save') }}

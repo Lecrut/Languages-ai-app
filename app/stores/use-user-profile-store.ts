@@ -9,6 +9,7 @@ import {
   updateDoc,
 } from 'firebase/firestore'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
+import { TASKS_PER_SESSION_DEFAULT, clampTasksPerSession } from '../constants/task-session-settings'
 import type { AuthUser } from '../models/auth-user'
 import type { UserProfile, UserProfileUpdatePayload } from '../models/user-profile'
 import { useFirebase } from '../composables/useFirebase'
@@ -19,6 +20,7 @@ interface FirestoreUserProfile {
   nick: string
   appLanguage: string
   learningLanguage: string
+  tasksPerSession?: number
   email: string
   createdAt?: Timestamp
 }
@@ -33,6 +35,7 @@ const mapFirestoreProfile = (profile: FirestoreUserProfile): UserProfile => {
     nick: profile.nick,
     appLanguage: profile.appLanguage,
     learningLanguage: profile.learningLanguage,
+    tasksPerSession: clampTasksPerSession(profile.tasksPerSession ?? TASKS_PER_SESSION_DEFAULT),
     email: profile.email,
     createdAt: createdAtIso,
   }
@@ -74,6 +77,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
           nick: getDefaultNick(authUser),
           appLanguage: 'pl',
           learningLanguage: 'en',
+          tasksPerSession: TASKS_PER_SESSION_DEFAULT,
           email: authUser.email ?? '',
           createdAt: serverTimestamp(),
         })
@@ -105,6 +109,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
         nick: payload.nick,
         appLanguage: payload.appLanguage,
         learningLanguage: payload.learningLanguage,
+        tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
         email: payload.email,
       })
 

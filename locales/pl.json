@@ -54,6 +54,8 @@
     "nick": "Nick",
     "appLanguage": "Język aplikacji",
     "learningLanguage": "Język, którego chcesz się uczyć",
+    "tasksPerSession": "Liczba zadań na sesję",
+    "tasksPerSessionHint": "Ustaw stałą liczbę zadań w zakresie od {min} do {max}.",
     "uid": "ID użytkownika",
     "email": "E-mail",
     "createdAt": "Data utworzenia konta",

@@ -54,6 +54,8 @@
     "nick": "Nickname",
     "appLanguage": "App language",
     "learningLanguage": "Language you want to learn",
+    "tasksPerSession": "Tasks per session",
+    "tasksPerSessionHint": "Set a fixed number of tasks in the range from {min} to {max}.",
     "uid": "User ID",
     "email": "Email",
     "createdAt": "Account created at",

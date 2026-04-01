@@ -1,7 +1,14 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { TASK_TYPES, type TaskDocument } from '../models/task.types'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { TASKS_PER_SESSION_DEFAULT, clampTasksPerSession } from '../constants/task-session-settings'
+import type { AiTaskPromptParams } from '../constants/ai-task-prompts'
+import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
+import { parseAiGeneratedTaskList } from '../models/ai-generated-task.schema'
+import type { TaskDocument } from '../models/task.types'
 import type { ResultTaskPayload } from '../models/result'
+import { useFirebase } from '../composables/useFirebase'
+import { useUserProfileStore } from './use-user-profile-store'
 
 export interface TaskSessionTask extends Omit<TaskDocument, 'reference'> {
   id: string
@@ -12,56 +19,20 @@ interface TaskEvaluation {
   isCorrect: boolean
 }
 
+interface GenerateTasksWithAiParams extends Omit<AiTaskPromptParams, 'tasksCount'> {
+  tasksCount?: number
+}
+
 const normalizeAnswer = (value: string) => value.trim().toLowerCase()
 
-const mockTasks: TaskSessionTask[] = [
-  {
-    id: 'task-1',
-    subject: 'Grammar',
-    topic: 'Present Simple',
-    type: TASK_TYPES[0],
-    question: 'Choose the correct sentence:',
-    options: ['She go to school every day.', 'She goes to school every day.', 'She going to school every day.', 'She gone to school every day.'],
-    correctAnswer: 'She goes to school every day.',
-    hint: 'Remember third person singular with he/she/it.',
-  },
-  {
-    id: 'task-2',
-    subject: 'Vocabulary',
-    topic: 'Travel',
-    type: TASK_TYPES[2],
-    question: 'I need to _____ a ticket online before the trip.',
-    options: ['book', 'cook', 'look', 'took'],
-    correctAnswer: 'book',
-    hint: 'It means reserving something in advance.',
-  },
-  {
-    id: 'task-3',
-    subject: 'Sentence building',
-    topic: 'Daily routine',
-    type: TASK_TYPES[1],
-    question: 'Arrange the words into a correct sentence.',
-    options: ['always', 'I', 'coffee', 'drink', 'in the morning'],
-    correctAnswer: 'I always drink coffee in the morning',
-    hint: 'Start with the subject and place the adverb before the verb.',
-  },
-  {
-    id: 'task-4',
-    subject: 'Flashcard',
-    topic: 'Synonyms',
-    type: TASK_TYPES[3],
-    question: 'Select a synonym of "happy".',
-    options: ['joyful', 'angry', 'silent', 'rough'],
-    correctAnswer: 'joyful',
-    hint: null,
-  },
-]
-
 export const useTaskSessionStore = defineStore('task-session', () => {
-  const tasks = ref<TaskSessionTask[]>(mockTasks)
+  const userProfileStore = useUserProfileStore()
+  const tasks = ref<TaskSessionTask[]>([])
   const started = ref(false)
   const currentTaskIndex = ref(0)
   const evaluations = ref<Record<string, TaskEvaluation>>({})
+  const generating = ref(false)
+  const generationError = ref<string | null>(null)
 
   const totalTasks = computed(() => tasks.value.length)
   const currentTask = computed(() => tasks.value[currentTaskIndex.value] ?? null)
@@ -99,9 +70,75 @@ export const useTaskSessionStore = defineStore('task-session', () => {
   }))
 
   const startSession = () => {
+    if (!tasks.value.length) {
+      return
+    }
+
     started.value = true
     currentTaskIndex.value = 0
     evaluations.value = {}
+    generationError.value = null
+  }
+
+  const sessionTasksCount = computed(() => clampTasksPerSession(
+    userProfileStore.profile?.tasksPerSession ?? TASKS_PER_SESSION_DEFAULT,
+  ))
+
+  const generateTasksWithAi = async (params: GenerateTasksWithAiParams) => {
+    const { db, generateTasksJsonWithAi } = useFirebase()
+    const requestedTasksCount = clampTasksPerSession(params.tasksCount ?? sessionTasksCount.value)
+
+    generating.value = true
+    generationError.value = null
+
+    try {
+      const rawJson = await generateTasksJsonWithAi({
+        ...params,
+        tasksCount: requestedTasksCount,
+      })
+
+      const parsed = parseAiGeneratedTaskList(rawJson, requestedTasksCount)
+
+      const savedTasks = await Promise.all(parsed.tasks.map(async (task) => {
+        const docRef = await addDoc(collection(db, FIREBASE_COLLECTIONS.tasks), {
+          subject: params.subject,
+          topic: params.topic,
+          type: task.type,
+          question: task.question,
+          options: task.options,
+          correctAnswer: task.correctAnswer,
+          hint: task.hint,
+          targetLanguage: params.subject,
+          nativeLanguage: params.nativeLanguage,
+          level: params.level,
+          createdAt: serverTimestamp(),
+        })
+
+        return {
+          id: docRef.id,
+          subject: params.subject,
+          topic: params.topic,
+          type: task.type,
+          question: task.question,
+          options: task.options,
+          correctAnswer: task.correctAnswer,
+          hint: task.hint,
+        } satisfies TaskSessionTask
+      }))
+
+      tasks.value = savedTasks
+      currentTaskIndex.value = 0
+      evaluations.value = {}
+
+      return savedTasks
+    }
+    catch (caughtError) {
+      generationError.value = caughtError instanceof Error ? caughtError.message : 'Failed to generate tasks'
+      throw caughtError
+    }
+    finally {
+      generating.value = false
+    }
   }
 
   const submitCurrentAnswer = (answer: string) => {
@@ -137,20 +174,25 @@ export const useTaskSessionStore = defineStore('task-session', () => {
     started.value = false
     currentTaskIndex.value = 0
     evaluations.value = {}
+    generationError.value = null
   }
 
   return {
     tasks,
     started,
+    generating,
+    generationError,
     currentTask,
     totalTasks,
     currentTaskNumber,
+    sessionTasksCount,
     completed,
     correctCount,
     incorrectCount,
     currentEvaluation,
     taskResults,
     startSession,
+    generateTasksWithAi,
     submitCurrentAnswer,
     goToNextTask,
     reset,
