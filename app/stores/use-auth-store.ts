@@ -13,7 +13,12 @@ import {
   verifyPasswordResetCode,
 } from 'firebase/auth'
 import type { AuthUser } from '../models/auth-user'
-import { useFirebaseAuth } from '../composables/useFirebaseAuth'
+import { useFirebase } from '../composables/useFirebase'
+import { useResultsStore } from './use-results-store'
+import { useSharedStore } from './use-shared-store'
+import { useSnackbarStore } from './use-snackbar-store'
+import { useTaskSessionStore } from './use-task-session-store'
+import { useUserProfileStore } from './use-user-profile-store'
 
 const mapUser = (user: User | null): AuthUser | null => {
   if (!user) {
@@ -30,8 +35,9 @@ const mapUser = (user: User | null): AuthUser | null => {
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUser | null>(null)
   const initialized = ref(false)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+  const sharedStore = useSharedStore()
+  const loading = computed(() => sharedStore.loading)
+  const error = computed(() => sharedStore.error)
   const isAuthenticated = computed(() => Boolean(user.value))
 
   const initAuth = async () => {
@@ -39,10 +45,10 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
 
-    const { auth } = useFirebaseAuth()
+    const { auth } = useFirebase()
 
-    loading.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       await setPersistence(auth, browserLocalPersistence)
@@ -56,75 +62,81 @@ export const useAuthStore = defineStore('auth', () => {
       })
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Authentication initialization failed'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Authentication initialization failed')
     }
     finally {
-      loading.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const login = async (email: string, password: string) => {
-    const { auth } = useFirebaseAuth()
+    const { auth } = useFirebase()
 
-    loading.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       await signInWithEmailAndPassword(auth, email, password)
       user.value = mapUser(auth.currentUser)
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Login failed'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Login failed')
       throw caughtError
     }
     finally {
-      loading.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const register = async (email: string, password: string) => {
-    const { auth } = useFirebaseAuth()
+    const { auth } = useFirebase()
 
-    loading.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       await createUserWithEmailAndPassword(auth, email, password)
       user.value = mapUser(auth.currentUser)
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Registration failed'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Registration failed')
       throw caughtError
     }
     finally {
-      loading.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const logout = async () => {
-    const { auth } = useFirebaseAuth()
+    const { auth } = useFirebase()
 
-    loading.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       await signOut(auth)
-      user.value = null
+      reset()
+
+      useTaskSessionStore().reset()
+      useResultsStore().reset()
+      useUserProfileStore().reset()
+      useSnackbarStore().reset()
+      sharedStore.reset()
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Logout failed'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Logout failed')
       throw caughtError
     }
     finally {
-      loading.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const resetPassword = async (email: string, redirectUrl?: string) => {
-    const { auth } = useFirebaseAuth()
+    const { auth } = useFirebase()
 
-    loading.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       if (redirectUrl) {
@@ -139,53 +151,58 @@ export const useAuthStore = defineStore('auth', () => {
       await sendPasswordResetEmail(auth, email)
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Password reset failed'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Password reset failed')
       throw caughtError
     }
     finally {
-      loading.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const validatePasswordResetCode = async (code: string) => {
-    const { auth } = useFirebaseAuth()
+    const { auth } = useFirebase()
 
-    loading.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       const email = await verifyPasswordResetCode(auth, code)
       return email
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Invalid or expired password reset code'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Invalid or expired password reset code')
       throw caughtError
     }
     finally {
-      loading.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const confirmResetPassword = async (code: string, newPassword: string) => {
-    const { auth } = useFirebaseAuth()
+    const { auth } = useFirebase()
 
-    loading.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       await confirmPasswordReset(auth, code, newPassword)
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Password reset confirmation failed'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Password reset confirmation failed')
       throw caughtError
     }
     finally {
-      loading.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const clearError = () => {
-    error.value = null
+    sharedStore.clearError()
+  }
+
+  const reset = () => {
+    user.value = null
+    initialized.value = false
   }
 
   return {
@@ -202,5 +219,6 @@ export const useAuthStore = defineStore('auth', () => {
     validatePasswordResetCode,
     confirmResetPassword,
     clearError,
+    reset,
   }
 })

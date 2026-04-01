@@ -31,6 +31,13 @@ export const useSnackbarStore = defineStore('snackbar', () => {
     visible.value = false
   }
 
+  const reset = () => {
+    visible.value = false
+    text.value = ''
+    color.value = 'info'
+    timeout.value = 4000
+  }
+
   return {
     visible,
     text,
@@ -40,5 +47,6 @@ export const useSnackbarStore = defineStore('snackbar', () => {
     showError,
     showSuccess,
     hide,
+    reset,
   }
 })

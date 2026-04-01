@@ -97,6 +97,11 @@ const navigateHome = async () => {
   await router.push(homePath.value)
 }
 
+const logout = async () => {
+  await authStore.logout()
+  await router.push(localePath('/auth/login'))
+}
+
 onMounted(() => {
   if (!import.meta.client) {
     return
@@ -135,6 +140,14 @@ onMounted(() => {
               :prepend-icon="item.icon"
             >
               {{ item.title }}
+            </VBtn>
+
+            <VBtn
+              variant="text"
+              prepend-icon="mdi-logout"
+              @click="logout"
+            >
+              {{ t('nav.logout') }}
             </VBtn>
           </template>
 

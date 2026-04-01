@@ -3,7 +3,6 @@ import { defineStore } from 'pinia'
 import {
   doc,
   getDoc,
-  getFirestore,
   serverTimestamp,
   setDoc,
   Timestamp,
@@ -12,7 +11,8 @@ import {
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import type { AuthUser } from '../models/auth-user'
 import type { UserProfile, UserProfileUpdatePayload } from '../models/user-profile'
-import { useFirebaseAuth } from '../composables/useFirebaseAuth'
+import { useFirebase } from '../composables/useFirebase'
+import { useSharedStore } from './use-shared-store'
 
 interface FirestoreUserProfile {
   uid: string
@@ -48,21 +48,21 @@ const getDefaultNick = (authUser: AuthUser) => {
 
 export const useUserProfileStore = defineStore('user-profile', () => {
   const profile = ref<UserProfile | null>(null)
-  const loading = ref(false)
-  const saving = ref(false)
-  const error = ref<string | null>(null)
+  const sharedStore = useSharedStore()
+  const loading = computed(() => sharedStore.loading)
+  const saving = computed(() => sharedStore.loading)
+  const error = computed(() => sharedStore.error)
   const hasProfile = computed(() => Boolean(profile.value))
 
   const getUserDocRef = (uid: string) => {
-    const { auth } = useFirebaseAuth()
-    const db = getFirestore(auth.app)
+    const { db } = useFirebase()
 
     return doc(db, FIREBASE_COLLECTIONS.users, uid)
   }
 
   const loadOrCreateProfile = async (authUser: AuthUser) => {
-    loading.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       const userDocRef = getUserDocRef(authUser.uid)
@@ -86,17 +86,17 @@ export const useUserProfileStore = defineStore('user-profile', () => {
       }
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Failed to load user profile'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Failed to load user profile')
       throw caughtError
     }
     finally {
-      loading.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const updateProfile = async (uid: string, payload: UserProfileUpdatePayload) => {
-    saving.value = true
-    error.value = null
+    sharedStore.startLoading()
+    sharedStore.clearError()
 
     try {
       const userDocRef = getUserDocRef(uid)
@@ -115,16 +115,20 @@ export const useUserProfileStore = defineStore('user-profile', () => {
       })
     }
     catch (caughtError) {
-      error.value = caughtError instanceof Error ? caughtError.message : 'Failed to update profile'
+      sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Failed to update profile')
       throw caughtError
     }
     finally {
-      saving.value = false
+      sharedStore.stopLoading()
     }
   }
 
   const clearProfileError = () => {
-    error.value = null
+    sharedStore.clearError()
+  }
+
+  const reset = () => {
+    profile.value = null
   }
 
   return {
@@ -136,5 +140,6 @@ export const useUserProfileStore = defineStore('user-profile', () => {
     loadOrCreateProfile,
     updateProfile,
     clearProfileError,
+    reset,
   }
 })

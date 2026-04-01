@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { useSnackbarStore } from '../stores/use-snackbar-store'
+import { useSharedStore } from '../stores/use-shared-store'
 
 const snackbarStore = useSnackbarStore()
+const sharedStore = useSharedStore()
 
 const model = computed({
   get: () => snackbarStore.visible,
@@ -11,6 +14,18 @@ const model = computed({
     }
   },
 })
+
+watch(
+  () => sharedStore.error,
+  (errorMessage) => {
+    if (!errorMessage) {
+      return
+    }
+
+    snackbarStore.showError(errorMessage)
+    sharedStore.clearError()
+  },
+)
 </script>
 
 <template>

@@ -9,6 +9,7 @@
   "nav": {
     "home": "Home",
     "login": "Sign in",
+    "logout": "Sign out",
     "play": "Play",
     "results": "Results",
     "profile": "Profile"
@@ -62,11 +63,39 @@
   },
   "play": {
     "title": "Play",
-    "description": "This is where the main learning and AI tasks flow will appear."
+    "description": "This is where the main learning and AI tasks flow will appear.",
+    "start": "Start",
+    "taskProgress": "Task {current} of {total}",
+    "correctCount": "Correct: {count}",
+    "incorrectCount": "Incorrect: {count}",
+    "checkAnswer": "Check",
+    "clear": "Clear",
+    "nextTask": "Next",
+    "answerCorrect": "Correct answer!",
+    "answerIncorrect": "That answer is not correct.",
+    "sessionCompleted": "You finished the task set.",
+    "restart": "Play again",
+    "summaryTitle": "Summary",
+    "correctAnswerTile": "Correct answer",
+    "selectedAnswerTile": "Your answer"
   },
   "results": {
     "title": "Results",
-    "description": "Results section placeholder until detailed requirements are provided."
+    "description": "Your recent learning sessions.",
+    "saveError": "Failed to save summary result.",
+    "statsTitle": "Statistics",
+    "statsInfo": "Calculated from the latest 10 fetched sessions.",
+    "correctCount": "Correct: {count}",
+    "incorrectCount": "Incorrect: {count}",
+    "averageCorrectPerSession": "Average correct per session: {count}",
+    "sessionTasks": "Tasks: {count}",
+    "loadMore": "Load more",
+    "empty": "No saved sessions yet.",
+    "detailsTitle": "Session details",
+    "selectSession": "Select a session from the list to view questions.",
+    "userAnswerLabel": "Your answer",
+    "correctAnswerLabel": "Correct answer",
+    "close": "Close"
   },
   "resetPassword": {
     "title": "Reset password",

@@ -9,6 +9,7 @@
   "nav": {
     "home": "Główna",
     "login": "Zaloguj",
+    "logout": "Wyloguj",
     "play": "Graj",
     "results": "Wyniki",
     "profile": "Profil"
@@ -62,11 +63,39 @@
   },
   "play": {
     "title": "Graj",
-    "description": "Tutaj będzie główny ekran nauki i zadań AI."
+    "description": "Tutaj będzie główny ekran nauki i zadań AI.",
+    "start": "Start",
+    "taskProgress": "Zadanie {current} z {total}",
+    "correctCount": "Poprawne: {count}",
+    "incorrectCount": "Błędne: {count}",
+    "checkAnswer": "Sprawdź",
+    "clear": "Wyczyść",
+    "nextTask": "Dalej",
+    "answerCorrect": "Dobra odpowiedź!",
+    "answerIncorrect": "To nie ta odpowiedź.",
+    "sessionCompleted": "Koniec zestawu zadań.",
+    "restart": "Zagraj jeszcze raz",
+    "summaryTitle": "Podsumowanie",
+    "correctAnswerTile": "Poprawna odpowiedź",
+    "selectedAnswerTile": "Twoja odpowiedź"
   },
   "results": {
     "title": "Wyniki",
-    "description": "Sekcja wyników będzie rozbudowana po doprecyzowaniu wymagań."
+    "description": "Twoje ostatnie sesje nauki.",
+    "saveError": "Nie udało się zapisać podsumowania.",
+    "statsTitle": "Statystyki",
+    "statsInfo": "Obliczone na podstawie 10 najnowszych pobranych sesji.",
+    "correctCount": "Poprawne: {count}",
+    "incorrectCount": "Błędne: {count}",
+    "averageCorrectPerSession": "Średnio poprawnych na sesję: {count}",
+    "sessionTasks": "Zadań: {count}",
+    "loadMore": "Pobierz więcej",
+    "empty": "Brak zapisanych sesji.",
+    "detailsTitle": "Szczegóły sesji",
+    "selectSession": "Kliknij sesję z listy, aby zobaczyć pytania.",
+    "userAnswerLabel": "Twoja odpowiedź",
+    "correctAnswerLabel": "Poprawna odpowiedź",
+    "close": "Zamknij"
   },
   "resetPassword": {
     "title": "Reset hasła",
