@@ -15,6 +15,11 @@ const authStore = useAuthStore()
 const resultsStore = useResultsStore()
 const selectedSessionId = ref<string | null>(null)
 const detailsDialogVisible = ref(false)
+const { setPageTitle } = usePageHead()
+
+onMounted(() => {
+  setPageTitle(t('results.title'))
+})
 
 const topTenSessions = computed(() => resultsStore.sessions.slice(0, 10))
 const summaryCorrectCount = computed(() => topTenSessions.value.reduce((acc, session) => acc + session.correctCount, 0))

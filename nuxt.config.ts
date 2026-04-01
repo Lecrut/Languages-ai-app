@@ -119,6 +119,24 @@ export default defineNuxtConfig({
     ]
   },
 
+  site: {
+    name: 'Languages AI',
+    url: process.env.SITE_URL || 'https://languages-ai.vercel.app',
+  },
+
+  robots: {
+    rules: {
+      UserAgent: '*',
+      Allow: '/',
+      Disallow: ['/admin'],
+    },
+  },
+
+  sitemap: {
+    sitemapSize: 50000,
+    sources: ['/sitemap.xml'],
+  },
+
   runtimeConfig: {
     public: {
       appName: import.meta.env.APP_NAME || 'Languages AI',

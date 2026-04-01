@@ -16,6 +16,18 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const userProfileStore = useUserProfileStore()
 const router = useRouter()
+const { setPageTitle } = usePageHead()
+
+onMounted(async () => {
+  setPageTitle(t('profile.title'))
+
+  if (!authStore.user) {
+    return
+  }
+
+  await userProfileStore.loadOrCreateProfile(authStore.user)
+  fillFormFromProfile()
+})
 
 const nick = ref('')
 const appLanguage = ref('pl')
@@ -66,6 +78,8 @@ const canSaveProfile = computed(() => Boolean(
 ))
 
 onMounted(async () => {
+  setPageTitle(t('profile.title'))
+
   if (!authStore.user) {
     return
   }

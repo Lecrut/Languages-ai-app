@@ -5,6 +5,11 @@ definePageMeta({
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+const { setPageMeta } = usePageHead()
+
+onMounted(() => {
+  setPageMeta(t('app.title'), t('home.quote'))
+})
 </script>
 
 <template>

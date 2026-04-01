@@ -14,6 +14,11 @@ const localePath = useLocalePath()
 const authStore = useAuthStore()
 const snackbarStore = useSnackbarStore()
 const router = useRouter()
+const { setPageTitle } = usePageHead()
+
+onMounted(() => {
+  setPageTitle(t('register.title'))
+})
 
 const username = ref('')
 const email = ref('')

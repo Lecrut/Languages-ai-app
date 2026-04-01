@@ -16,6 +16,11 @@ const taskSessionStore = useTaskSessionStore()
 const userProfileStore = useUserProfileStore()
 const isResultSaved = ref(false)
 const isStartingSession = ref(false)
+const { setPageTitle } = usePageHead()
+
+onMounted(() => {
+  setPageTitle(t('play.title'))
+})
 
 const languageLabelByCode: Record<string, string> = {
   pl: 'Polish',
