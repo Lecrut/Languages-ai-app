@@ -13,7 +13,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@logto/nuxt": "1.2.9",
     "@mdi/font": "^7.4.47",
     "@nuxt/eslint": "1.15.2",
     "@nuxt/image": "2.0.0",

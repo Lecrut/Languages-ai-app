@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
   browserLocalPersistence,
+  confirmPasswordReset,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -9,6 +10,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   type User,
+  verifyPasswordResetCode,
 } from 'firebase/auth'
 import type { AuthUser } from '../models/auth-user'
 import { useFirebaseAuth } from '../composables/useFirebaseAuth'
@@ -118,17 +120,63 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (email: string, redirectUrl?: string) => {
     const { auth } = useFirebaseAuth()
 
     loading.value = true
     error.value = null
 
     try {
+      if (redirectUrl) {
+        await sendPasswordResetEmail(auth, email, {
+          url: redirectUrl,
+          handleCodeInApp: true,
+        })
+
+        return
+      }
+
       await sendPasswordResetEmail(auth, email)
     }
     catch (caughtError) {
       error.value = caughtError instanceof Error ? caughtError.message : 'Password reset failed'
+      throw caughtError
+    }
+    finally {
+      loading.value = false
+    }
+  }
+
+  const validatePasswordResetCode = async (code: string) => {
+    const { auth } = useFirebaseAuth()
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const email = await verifyPasswordResetCode(auth, code)
+      return email
+    }
+    catch (caughtError) {
+      error.value = caughtError instanceof Error ? caughtError.message : 'Invalid or expired password reset code'
+      throw caughtError
+    }
+    finally {
+      loading.value = false
+    }
+  }
+
+  const confirmResetPassword = async (code: string, newPassword: string) => {
+    const { auth } = useFirebaseAuth()
+
+    loading.value = true
+    error.value = null
+
+    try {
+      await confirmPasswordReset(auth, code, newPassword)
+    }
+    catch (caughtError) {
+      error.value = caughtError instanceof Error ? caughtError.message : 'Password reset confirmation failed'
       throw caughtError
     }
     finally {
@@ -151,6 +199,8 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     resetPassword,
+    validatePasswordResetCode,
+    confirmResetPassword,
     clearError,
   }
 })

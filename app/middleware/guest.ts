@@ -13,6 +13,6 @@ export default defineNuxtRouteMiddleware(async () => {
   }
 
   if (authStore.isAuthenticated) {
-    return navigateTo('/user/profile')
+    return navigateTo('/user')
   }
 })

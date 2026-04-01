@@ -1,23 +1,54 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const isDev = process.env.NODE_ENV !== 'production'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+
+  app: {
+    head: {
+      title: 'Languages AI',
+      htmlAttrs: {
+        lang: 'pl',
+      },
+      meta: [
+        {
+          name: 'description',
+          content: 'Personalized English learning app with AI generated tasks',
+        },
+      ],
+    },
+  },
+
+  plugins: [
+    '~~/plugins/vuetify.ts',
+    '~~/plugins/auth-init.client.ts',
+  ],
 
   modules: [
     '@nuxt/eslint',
     '@vite-pwa/nuxt',
     '@nuxtjs/i18n',
-    '@nuxtjs/html-validator',
+    ...(isDev ? [] : ['@nuxtjs/html-validator']),
     '@nuxtjs/google-fonts',
     '@nuxt/scripts',
     '@nuxt/image',
-    '@logto/nuxt',
     '@pinia/nuxt',
     '@nuxtjs/seo',
     '@nuxtjs/device',
-    '@nuxtjs/emotion',
-    '@nuxtjs/eslint-module'
+    '@nuxtjs/emotion'
   ],
+
+  ogImage: {
+    zeroRuntime: true,
+  },
+
+  googleFonts: {
+    families: {
+      'Plus Jakarta Sans': [400, 500, 600, 700],
+    },
+    display: 'swap',
+  },
 
   pwa: {
     registerType: 'autoUpdate',
@@ -45,10 +76,9 @@ export default defineNuxtConfig({
     },
     workbox: {
       navigateFallback: '/',
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,json,woff2}'],
     },
     devOptions: {
-      enabled: true,
+      enabled: false,
       type: 'module',
     },
   },
@@ -63,23 +93,35 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    optimizeDeps: {
+      include: [
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        'workbox-window',
+        'firebase/auth',
+        'firebase/app',
+      ],
+    },
     ssr: {
       noExternal: ['vuetify']
     }
   },
 
   i18n: {
+    restructureDir: '',
+    vueI18n: './i18n.config.ts',
+    langDir: 'locales',
     defaultLocale: 'pl',
     strategy: 'prefix_except_default',
-    langDir: 'locales',
     locales: [
-      { code: 'pl', name: 'Polski', file: 'pl.json' },
-      { code: 'en', name: 'English', file: 'en.json' }
+      { code: 'pl', name: 'Polski', language: 'pl-PL', file: 'pl.json' },
+      { code: 'en', name: 'English', language: 'en-US', file: 'en.json' }
     ]
   },
 
   runtimeConfig: {
     public: {
+      appName: import.meta.env.APP_NAME || 'Languages AI',
       apiKey: import.meta.env.apiKey,
       authDomain: import.meta.env.authDomain,
       projectId: import.meta.env.projectId,

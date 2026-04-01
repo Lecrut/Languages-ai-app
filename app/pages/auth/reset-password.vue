@@ -6,6 +6,7 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 const authStore = useAuthStore()
 
 const email = ref('')
@@ -15,7 +16,11 @@ const handleResetPassword = async () => {
   success.value = false
 
   try {
-    await authStore.resetPassword(email.value)
+    const redirectUrl = import.meta.client
+      ? new URL(localePath('/auth/new-password'), window.location.origin).toString()
+      : undefined
+
+    await authStore.resetPassword(email.value, redirectUrl)
     success.value = true
   }
   catch {
@@ -27,14 +32,11 @@ const handleResetPassword = async () => {
 <template>
   <VRow class="justify-center">
     <VCol cols="12" sm="10" md="8" lg="5">
-      <VCard elevation="6">
-        <VCardTitle class="text-h5 d-flex align-center ga-2">
-          <VIcon icon="mdi-lock-reset" color="primary" />
-          {{ t('resetPassword.title') }}
-        </VCardTitle>
+      <VCard>
+        <VCardTitle class="text-h5 text-center my-3">{{ t('resetPassword.title') }}</VCardTitle>
 
         <VCardText>
-          <p class="text-body-2 mb-4">{{ t('resetPassword.subtitle') }}</p>
+          <p class="text-body-2 mb-4 text-center">{{ t('resetPassword.subtitle') }}</p>
 
           <VAlert
             v-if="authStore.error"
@@ -63,21 +65,25 @@ const handleResetPassword = async () => {
           />
         </VCardText>
 
-        <VCardActions class="d-flex flex-column ga-2">
+        <VCardActions class="justify-center pt-0">
           <VBtn
             color="primary"
-            block
+            size="large"
+            class="px-10"
             :loading="authStore.loading"
             :disabled="!email"
             @click="handleResetPassword"
           >
             {{ t('resetPassword.submit') }}
           </VBtn>
+        </VCardActions>
 
-          <VBtn variant="text" to="/auth/login">
+        <VCardText class="pt-2 pb-4 d-flex flex-column align-center text-center ga-1">
+          <div class="text-body-2">{{ t('resetPassword.haveAccount') }}</div>
+          <VBtn variant="text" size="small" color="secondary" :to="localePath('/auth/login')">
             {{ t('resetPassword.backToLogin') }}
           </VBtn>
-        </VCardActions>
+        </VCardText>
       </VCard>
     </VCol>
   </VRow>

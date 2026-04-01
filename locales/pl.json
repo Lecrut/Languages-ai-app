@@ -7,15 +7,18 @@
     "themeDark": "Ciemny"
   },
   "nav": {
-    "home": "Start",
-    "auth": "Logowanie",
+    "home": "Główna",
+    "login": "Zaloguj",
+    "play": "Graj",
+    "results": "Wyniki",
     "profile": "Profil"
   },
   "home": {
-    "title": "Aplikacja gotowa do dalszego rozwoju",
-    "description": "Skonfigurowano i18n, Vuetify oraz bazową strukturę widoków.",
-    "goAuth": "Przejdź do auth",
-    "goProfile": "Przejdź do profilu"
+    "quoteLabel": "Motto na start",
+    "quote": "Wiem, że nic nie wiem",
+    "author": "Sokrates",
+    "cta": "Zaczynamy?",
+    "imageAlt": "Posąg Sokratesa"
   },
   "auth": {
     "title": "Autoryzacja",
@@ -28,13 +31,21 @@
     "email": "E-mail",
     "password": "Hasło",
     "submit": "Zaloguj",
-    "forgotPassword": "Nie pamiętasz hasła?"
+    "noAccount": "Nie masz jeszcze konta?",
+    "registerNow": "Zarejestruj się",
+    "forgotPasswordPrompt": "Zapomniałeś hasła?",
+    "resetPassword": "Zresetuj hasło"
   },
   "register": {
     "title": "Rejestracja",
+    "username": "Nazwa użytkownika",
     "email": "E-mail",
     "password": "Hasło",
-    "submit": "Utwórz konto"
+    "confirmPassword": "Powtórz hasło",
+    "submit": "Utwórz konto",
+    "haveAccount": "Masz już konto?",
+    "loginNow": "Zaloguj się",
+    "passwordMismatch": "Hasła nie są takie same."
   },
   "profile": {
     "title": "Profil użytkownika",
@@ -49,12 +60,33 @@
     "saveSuccess": "Profil został zapisany.",
     "logout": "Wyloguj"
   },
+  "play": {
+    "title": "Graj",
+    "description": "Tutaj będzie główny ekran nauki i zadań AI."
+  },
+  "results": {
+    "title": "Wyniki",
+    "description": "Sekcja wyników będzie rozbudowana po doprecyzowaniu wymagań."
+  },
   "resetPassword": {
     "title": "Reset hasła",
     "subtitle": "Wpisz e-mail konta, a wyślemy link do ustawienia nowego hasła.",
     "email": "E-mail",
     "submit": "Wyślij link resetujący",
     "success": "Wysłaliśmy link do resetu hasła. Sprawdź swoją skrzynkę.",
+    "haveAccount": "Pamiętasz hasło?",
     "backToLogin": "Wróć do logowania"
+  },
+  "newPassword": {
+    "title": "Ustaw nowe hasło",
+    "subtitle": "Wpisz i potwierdź nowe hasło do swojego konta.",
+    "email": "Konto",
+    "password": "Nowe hasło",
+    "confirmPassword": "Powtórz nowe hasło",
+    "passwordMismatch": "Hasła nie są takie same.",
+    "submit": "Zapisz nowe hasło",
+    "success": "Hasło zostało zmienione. Możesz się zalogować.",
+    "backToLoginPrompt": "Przejdź do logowania",
+    "backToLogin": "Zaloguj się"
   }
 }

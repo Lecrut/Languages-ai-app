@@ -8,14 +8,17 @@
   },
   "nav": {
     "home": "Home",
-    "auth": "Auth",
+    "login": "Sign in",
+    "play": "Play",
+    "results": "Results",
     "profile": "Profile"
   },
   "home": {
-    "title": "Application initialized for next steps",
-    "description": "i18n, Vuetify, and a base page structure are configured.",
-    "goAuth": "Open auth",
-    "goProfile": "Open profile"
+    "quoteLabel": "Opening quote",
+    "quote": "I know that I know nothing",
+    "author": "Socrates",
+    "cta": "Shall we begin?",
+    "imageAlt": "Socrates statue"
   },
   "auth": {
     "title": "Authentication",
@@ -28,13 +31,21 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "forgotPassword": "Forgot password?"
+    "noAccount": "Don't have an account yet?",
+    "registerNow": "Sign up",
+    "forgotPasswordPrompt": "Forgot your password?",
+    "resetPassword": "Reset password"
   },
   "register": {
     "title": "Sign up",
+    "username": "Username",
     "email": "Email",
     "password": "Password",
-    "submit": "Create account"
+    "confirmPassword": "Confirm password",
+    "submit": "Create account",
+    "haveAccount": "Already have an account?",
+    "loginNow": "Sign in",
+    "passwordMismatch": "Passwords do not match."
   },
   "profile": {
     "title": "User profile",
@@ -49,12 +60,33 @@
     "saveSuccess": "Profile has been saved.",
     "logout": "Sign out"
   },
+  "play": {
+    "title": "Play",
+    "description": "This is where the main learning and AI tasks flow will appear."
+  },
+  "results": {
+    "title": "Results",
+    "description": "Results section placeholder until detailed requirements are provided."
+  },
   "resetPassword": {
     "title": "Reset password",
     "subtitle": "Enter your account email and we will send a password reset link.",
     "email": "Email",
     "submit": "Send reset link",
     "success": "Password reset link sent. Check your inbox.",
+    "haveAccount": "Remember your password?",
     "backToLogin": "Back to sign in"
+  },
+  "newPassword": {
+    "title": "Set a new password",
+    "subtitle": "Enter and confirm your new account password.",
+    "email": "Account",
+    "password": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordMismatch": "Passwords do not match.",
+    "submit": "Save new password",
+    "success": "Password has been changed. You can sign in now.",
+    "backToLoginPrompt": "Go to sign in",
+    "backToLogin": "Sign in"
   }
 }

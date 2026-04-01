@@ -1,0 +1,74 @@
+{
+  "files.associations": {
+    "*.css": "postcss"
+  },
+
+  "prettier.enable": false,
+  "editor.formatOnSave": false,
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+
+  "eslint.rules.customizations": [
+    { "rule": "style/*", "severity": "off" },
+    { "rule": "*-indent", "severity": "off" },
+    { "rule": "*-spacing", "severity": "off" },
+    { "rule": "*-spaces", "severity": "off" },
+    { "rule": "*-order", "severity": "off" },
+    { "rule": "*-dangle", "severity": "off" },
+    { "rule": "*-newline", "severity": "off" },
+    { "rule": "*quotes", "severity": "off" },
+    { "rule": "*semi", "severity": "off" }
+  ],
+
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "html",
+    "markdown",
+    "json",
+    "jsonc",
+    "yaml"
+  ],
+  "i18n-ally.sourceLanguage": "pl",
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.localesPaths": [
+    "locales"
+  ],
+  "i18n-ally.sortKeys": true,
+  "i18n-ally.extract.autoDetect": true,
+  "i18n-ally.refactor.templates": [
+    {
+      "source": "html-attribute",
+      "templates": [
+        "i18n.t('{key}'{args})",
+        "custom.t('{key}'{args})"
+      ],
+      "include": [
+        "**/*.{vue,ts,js}",
+        "index.html"
+      ]
+    }
+  ],
+  "i18n-ally.editor.preferEditor": true,
+  "i18n-ally.extract.parsers.html": {
+    "attributes": [
+      "text",
+      "title",
+      "alt",
+      "placeholder",
+      "label",
+      "aria-label"
+    ],
+    "ignoredTags": [
+      "style"
+    ],
+    "vBind": true,
+    "inlineText": true
+  },
+}
