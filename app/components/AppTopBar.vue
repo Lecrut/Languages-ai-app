@@ -187,20 +187,22 @@ onMounted(() => {
     </VContainer>
   </VAppBar>
 
-  <VBottomNavigation
-    v-if="smAndDown"
-    grow
-    color="primary"
-    :model-value="currentRoutePath"
-  >
-    <VBtn
-      v-for="item in mobileNavigationItems"
-      :key="item.to"
-      :to="item.to"
-      :value="item.to"
+  <ClientOnly>
+    <VBottomNavigation
+      v-if="smAndDown"
+      grow
+      color="primary"
+      :model-value="currentRoutePath"
     >
-      <VIcon :icon="item.icon" />
-      <span>{{ item.title }}</span>
-    </VBtn>
-  </VBottomNavigation>
+      <VBtn
+        v-for="item in mobileNavigationItems"
+        :key="item.to"
+        :to="item.to"
+        :value="item.to"
+      >
+        <VIcon :icon="item.icon" />
+        <span>{{ item.title }}</span>
+      </VBtn>
+    </VBottomNavigation>
+  </ClientOnly>
 </template>

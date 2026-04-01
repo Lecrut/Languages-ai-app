@@ -29,12 +29,14 @@ watch(
 </script>
 
 <template>
-  <VSnackbar
-    v-model="model"
-    :color="snackbarStore.color"
-    :timeout="snackbarStore.timeout"
-    location="bottom"
-  >
-    {{ snackbarStore.text }}
-  </VSnackbar>
+  <ClientOnly>
+    <VSnackbar
+      v-model="model"
+      :color="snackbarStore.color"
+      :timeout="snackbarStore.timeout"
+      location="bottom"
+    >
+      {{ snackbarStore.text }}
+    </VSnackbar>
+  </ClientOnly>
 </template>

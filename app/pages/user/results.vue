@@ -207,40 +207,42 @@ watch(
     </VCol>
   </VRow>
 
-  <VDialog v-model="detailsDialogVisible" max-width="720">
-    <VCard>
-      <VCardTitle class="text-h6">{{ t('results.detailsTitle') }}</VCardTitle>
-      <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
-        <p class="text-body-2 text-medium-emphasis mb-0">
-          {{ formatDateTime(selectedSession.date, locale) }}
-        </p>
+  <ClientOnly>
+    <VDialog v-model="detailsDialogVisible" max-width="720">
+      <VCard>
+        <VCardTitle class="text-h6">{{ t('results.detailsTitle') }}</VCardTitle>
+        <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
+          <p class="text-body-2 text-medium-emphasis mb-0">
+            {{ formatDateTime(selectedSession.date, locale) }}
+          </p>
 
-        <VCard
-          v-for="task in orderedTasks"
-          :key="task.id"
-          :color="task.isPassed ? 'success' : 'error'"
-          variant="tonal"
-        >
-          <VCardText class="d-flex flex-column ga-2">
-            <div class="d-flex align-center ga-2">
-              <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
-              <span class="text-subtitle-2">{{ task.question }}</span>
-            </div>
-            <p class="mb-0 text-body-2">
-              {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
-            </p>
-            <p class="mb-0 text-body-2">
-              {{ t('results.correctAnswerLabel') }}: {{ task.correctAnswer }}
-            </p>
-          </VCardText>
-        </VCard>
-      </VCardText>
-      <VCardActions>
-        <VSpacer />
-        <VBtn variant="text" @click="detailsDialogVisible = false">
-          {{ t('results.close') }}
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
+          <VCard
+            v-for="task in orderedTasks"
+            :key="task.id"
+            :color="task.isPassed ? 'success' : 'error'"
+            variant="tonal"
+          >
+            <VCardText class="d-flex flex-column ga-2">
+              <div class="d-flex align-center ga-2">
+                <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
+                <span class="text-subtitle-2">{{ task.question }}</span>
+              </div>
+              <p class="mb-0 text-body-2">
+                {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
+              </p>
+              <p class="mb-0 text-body-2">
+                {{ t('results.correctAnswerLabel') }}: {{ task.correctAnswer }}
+              </p>
+            </VCardText>
+          </VCard>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="detailsDialogVisible = false">
+            {{ t('results.close') }}
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+  </ClientOnly>
 </template>
