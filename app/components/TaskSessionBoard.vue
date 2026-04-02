@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 import type { TaskSessionTask } from '../stores/use-task-session-store'
-
-const { t } = useI18n()
+import { normalizeAnswer } from '../helpers/normalize-answer'
 
 const props = defineProps<{
   task: TaskSessionTask | null
@@ -23,16 +23,15 @@ const emit = defineEmits<{
 }>()
 
 const selectedArrangeWords = ref<string[]>([])
+const { mdAndUp } = useDisplay()
 
 const optionColors = ['primary', 'success', 'warning', 'info'] as const
 
 const hasTask = computed(() => Boolean(props.task))
 const isArrangeTask = computed(() => props.task?.type === 'arrange_words')
-const isFlashcardTask = computed(() => props.task?.type === 'flashcard')
 const canSubmitArrangeAnswer = computed(() => selectedArrangeWords.value.length > 0)
 const arrangedAnswer = computed(() => selectedArrangeWords.value.join(' '))
 const isAnswered = computed(() => props.currentAnswerCorrect !== null)
-const isFlashcardAnswerRevealed = ref(false)
 const scorePercentage = computed(() => {
   if (!props.totalTasks) {
     return 0
@@ -40,40 +39,21 @@ const scorePercentage = computed(() => {
 
   return Math.round((props.correctCount / props.totalTasks) * 100)
 })
-const selectedAnswerLabel = computed(() => {
-  if (props.task?.type !== 'flashcard') {
-    return props.currentAnswer ?? ''
-  }
-
-  if (props.currentAnswer === '__flashcard_known__') {
-    return t('play.flashcardKnown')
-  }
-
-  if (props.currentAnswer === '__flashcard_unknown__') {
-    return t('play.flashcardUnknown')
-  }
-
-  return props.currentAnswer ?? ''
-})
+const selectedAnswerLabel = computed(() => props.currentAnswer ?? '')
 const correctAnswerLabel = computed(() => props.task?.correctAnswer ?? '')
+const questionTypographyClass = computed(() => (mdAndUp.value ? 'text-display-medium' : 'text-headline-small'))
 const showSelectedAnswerTile = computed(() => {
   if (!isAnswered.value) {
     return false
   }
 
-  if (isFlashcardTask.value) {
-    return false
-  }
-
-  return selectedAnswerLabel.value.trim().toLowerCase() !== correctAnswerLabel.value.trim().toLowerCase()
+  return normalizeAnswer(selectedAnswerLabel.value) !== normalizeAnswer(correctAnswerLabel.value)
 })
-const showFlashcardEvaluationTile = computed(() => isFlashcardTask.value && isAnswered.value)
 
 watch(
   () => props.task?.id,
   () => {
     selectedArrangeWords.value = []
-    isFlashcardAnswerRevealed.value = false
   },
 )
 
@@ -116,22 +96,6 @@ const submitOptionAnswer = (option: string) => {
 
   emit('submitAnswer', option)
 }
-
-const revealFlashcardAnswer = () => {
-  if (isAnswered.value) {
-    return
-  }
-
-  isFlashcardAnswerRevealed.value = true
-}
-
-const submitFlashcardKnown = () => {
-  submitOptionAnswer('__flashcard_known__')
-}
-
-const submitFlashcardUnknown = () => {
-  submitOptionAnswer('__flashcard_unknown__')
-}
 </script>
 
 <template>
@@ -164,7 +128,7 @@ const submitFlashcardUnknown = () => {
                 :width="14"
                 color="success"
               >
-                <span class="text-h6">{{ scorePercentage }}%</span>
+                <span class="text-headline-small">{{ scorePercentage }}%</span>
               </VProgressCircular>
 
               <div class="d-flex ga-3 flex-wrap justify-center">
@@ -176,7 +140,7 @@ const submitFlashcardUnknown = () => {
                 </VChip>
               </div>
 
-              <p class="text-body-1 mb-0">{{ $t('play.sessionCompleted') }}</p>
+              <p class="text-body-large mb-0">{{ $t('play.sessionCompleted') }}</p>
             </VCardText>
           </VCard>
 
@@ -194,12 +158,12 @@ const submitFlashcardUnknown = () => {
       <VRow v-else-if="hasTask">
         <VCol cols="12">
           <div class="px-1 px-md-2 pb-2 pb-md-4">
-            <p class="text-caption text-medium-emphasis mb-2">
+            <p class="text-body-small text-medium-emphasis mb-2">
               {{ task?.topic }}
             </p>
-            <p class="text-h6 text-sm-h5 text-md-h3 font-weight-bold mb-0">
+            <div :class="[questionTypographyClass, 'font-weight-bold mb-0']">
               {{ task?.question }}
-            </p>
+            </div>
           </div>
         </VCol>
 
@@ -222,7 +186,7 @@ const submitFlashcardUnknown = () => {
                 </VChip>
               </div>
 
-              <VRow dense>
+              <VRow density="comfortable">
                 <VCol
                   v-for="(option, optionIndex) in task?.options"
                   :key="`${option}-${optionIndex}`"
@@ -262,42 +226,7 @@ const submitFlashcardUnknown = () => {
               </div>
             </div>
 
-            <div v-else-if="isFlashcardTask && !isAnswered" class="d-flex flex-column ga-3">
-              <VBtn
-                v-if="!isFlashcardAnswerRevealed"
-                color="primary"
-                size="large"
-                @click="revealFlashcardAnswer"
-              >
-                {{ $t('play.flashcardRevealAnswer') }}
-              </VBtn>
-
-              <VCard v-else variant="tonal" color="primary">
-                <VCardText>
-                  <p class="text-caption mb-1">{{ $t('play.correctAnswerTile') }}</p>
-                  <p class="mb-0 text-h6">{{ correctAnswerLabel }}</p>
-                </VCardText>
-              </VCard>
-
-              <div v-if="isFlashcardAnswerRevealed" class="d-flex ga-2 flex-wrap">
-                <VBtn
-                  color="success"
-                  variant="flat"
-                  @click="submitFlashcardKnown"
-                >
-                  {{ $t('play.flashcardKnown') }}
-                </VBtn>
-                <VBtn
-                  color="error"
-                  variant="tonal"
-                  @click="submitFlashcardUnknown"
-                >
-                  {{ $t('play.flashcardUnknown') }}
-                </VBtn>
-              </div>
-            </div>
-
-            <VRow v-else-if="!isAnswered" dense>
+            <VRow v-else-if="!isAnswered" density="comfortable">
               <VCol
                 v-for="(option, optionIndex) in task?.options"
                 :key="`${option}-${optionIndex}`"
@@ -322,22 +251,8 @@ const submitFlashcardUnknown = () => {
                 <VCardText class="d-flex align-center ga-2">
                   <VIcon icon="mdi-check" />
                   <div>
-                    <p class="text-caption mb-1">{{ $t('play.correctAnswerTile') }}</p>
-                    <p class="mb-0 text-body-1">{{ correctAnswerLabel }}</p>
-                  </div>
-                </VCardText>
-              </VCard>
-
-              <VCard
-                v-if="showFlashcardEvaluationTile"
-                variant="flat"
-                :color="currentAnswerCorrect ? 'success' : 'error'"
-              >
-                <VCardText class="d-flex align-center ga-2">
-                  <VIcon :icon="currentAnswerCorrect ? 'mdi-thumb-up-outline' : 'mdi-help-circle-outline'" />
-                  <div>
-                    <p class="text-caption mb-1">{{ $t('play.flashcardEvaluationTile') }}</p>
-                    <p class="mb-0 text-body-1">{{ selectedAnswerLabel }}</p>
+                    <p class="text-body-small my-0">{{ $t('play.correctAnswerTile') }}</p>
+                    <p class="mb-0 text-body-large font-weight-bold">{{ correctAnswerLabel }}</p>
                   </div>
                 </VCardText>
               </VCard>
@@ -346,8 +261,8 @@ const submitFlashcardUnknown = () => {
                 <VCardText class="d-flex align-center ga-2">
                   <VIcon icon="mdi-close" />
                   <div>
-                    <p class="text-caption mb-1">{{ $t('play.selectedAnswerTile') }}</p>
-                    <p class="mb-0 text-body-1">{{ selectedAnswerLabel }}</p>
+                    <p class="text-body-small mb-1">{{ $t('play.selectedAnswerTile') }}</p>
+                    <p class="mb-0 text-body-large">{{ selectedAnswerLabel }}</p>
                   </div>
                 </VCardText>
               </VCard>

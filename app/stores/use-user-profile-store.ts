@@ -1,6 +1,10 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
+  DEFAULT_LEARNING_LEVEL,
+  type LearningLevel,
+} from '../constants/learning-levels'
+import {
   doc,
   getDoc,
   serverTimestamp,
@@ -34,6 +38,7 @@ interface FirestoreUserProfile {
   nick: string
   appLanguage: string
   learningLanguage: string
+  level?: LearningLevel
   tasksPerSession?: number
   email: string
   createdAt?: Timestamp
@@ -49,6 +54,7 @@ const mapFirestoreProfile = (profile: FirestoreUserProfile): UserProfile => {
     nick: profile.nick,
     appLanguage: profile.appLanguage,
     learningLanguage: profile.learningLanguage,
+    level: profile.level ?? DEFAULT_LEARNING_LEVEL,
     tasksPerSession: clampTasksPerSession(profile.tasksPerSession ?? TASKS_PER_SESSION_DEFAULT),
     email: profile.email,
     createdAt: createdAtIso,
@@ -91,6 +97,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
             nick: getDefaultNicknameFromEmail(authUser.email),
             appLanguage: 'pl',
             learningLanguage: 'en',
+            level: DEFAULT_LEARNING_LEVEL,
             tasksPerSession: TASKS_PER_SESSION_DEFAULT,
             email: authUser.email ?? '',
             createdAt: serverTimestamp(),
@@ -129,6 +136,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
           nick: payload.nick,
           appLanguage: payload.appLanguage,
           learningLanguage: payload.learningLanguage,
+          level: payload.level,
           tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
         }),
         'User profile update timed out',
@@ -140,6 +148,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
           nick: payload.nick,
           appLanguage: payload.appLanguage,
           learningLanguage: payload.learningLanguage,
+          level: payload.level,
           tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
         }
       }

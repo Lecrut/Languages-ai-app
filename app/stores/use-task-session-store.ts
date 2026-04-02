@@ -8,6 +8,7 @@ import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import { parseAiGeneratedTaskList } from '../models/ai-generated-task.schema'
 import type { TaskDocument } from '../models/task.types'
 import type { ResultTaskPayload } from '../models/result'
+import { normalizeAnswer } from '../helpers/normalize-answer'
 import { useFirebase } from '../composables/useFirebase'
 import { useUserProfileStore } from './use-user-profile-store'
 
@@ -34,14 +35,6 @@ interface GenerateTasksWithAiParams extends Omit<AiTaskPromptParams, 'tasksCount
 interface ResetTaskSessionOptions {
   preserveRecoverableSession?: boolean
 }
-
-const normalizeAnswer = (value: string) => value
-  .normalize('NFKC')
-  .toLowerCase()
-  .replace(/\s+/g, ' ')
-  .replace(/\s+([?!.,;:])/g, '$1')
-  .trim()
-const FLASHCARD_KNOWN_ANSWER = '__flashcard_known__'
 
 export const useTaskSessionStore = defineStore('task-session', () => {
   const userProfileStore = useUserProfileStore()
@@ -257,9 +250,7 @@ export const useTaskSessionStore = defineStore('task-session', () => {
       return existingEvaluation
     }
 
-    const isCorrect = task.type === 'flashcard'
-      ? answer === FLASHCARD_KNOWN_ANSWER
-      : normalizeAnswer(answer) === normalizeAnswer(task.correctAnswer)
+    const isCorrect = normalizeAnswer(answer) === normalizeAnswer(task.correctAnswer)
     const evaluation: TaskEvaluation = {
       userAnswer: answer,
       isCorrect,

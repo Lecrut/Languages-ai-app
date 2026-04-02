@@ -22,16 +22,16 @@ const fillBlankSelectGeneratedTaskSchema = baseGeneratedTaskSchema.extend({
   options: z.array(z.string().trim().min(1)).length(4),
 })
 
-const flashcardGeneratedTaskSchema = baseGeneratedTaskSchema.extend({
+const oddOneOutGeneratedTaskSchema = baseGeneratedTaskSchema.extend({
   type: z.literal(TASK_TYPES[3]),
-  options: z.array(z.string().trim().min(1)).length(0),
+  options: z.array(z.string().trim().min(1)).length(4),
 })
 
 const generatedTaskSchema = z.discriminatedUnion('type', [
   multipleChoiceGeneratedTaskSchema,
   arrangeWordsGeneratedTaskSchema,
   fillBlankSelectGeneratedTaskSchema,
-  flashcardGeneratedTaskSchema,
+  oddOneOutGeneratedTaskSchema,
 ])
 
 export const aiGeneratedTaskListSchema = z.object({

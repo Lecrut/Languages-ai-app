@@ -4,7 +4,7 @@ export const TASK_TYPES = [
   'multiple_choice',
   'arrange_words',
   'fill_blank_select',
-  'flashcard',
+  'odd_one_out',
 ] as const
 
 export type TaskType = (typeof TASK_TYPES)[number]

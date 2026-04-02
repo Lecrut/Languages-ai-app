@@ -69,7 +69,7 @@ const handleLogin = async () => {
   <VRow class="justify-center">
     <VCol cols="12" sm="10" md="8" lg="5">
       <VCard>
-        <VCardTitle class="text-h5 text-center my-3">{{ t('login.title') }}</VCardTitle>
+        <VCardTitle class="text-headline-large text-center my-3">{{ t('login.title') }}</VCardTitle>
         <VCardText>
           <VTextField v-model="email" :label="t('login.email')" :rules="emailRules" type="email" variant="outlined" class="mb-3" />
           <VTextField
@@ -96,12 +96,12 @@ const handleLogin = async () => {
         </VCardActions>
 
         <VCardText class="pt-2 pb-4 d-flex flex-column align-center text-center ga-1">
-          <div class="text-body-2">{{ t('login.noAccount') }}</div>
+          <div class="text-body-medium">{{ t('login.noAccount') }}</div>
           <VBtn variant="text" size="small" color="secondary" :to="localePath('/auth/register')">
             {{ t('login.registerNow') }}
           </VBtn>
 
-          <div class="text-body-2 mt-2">{{ t('login.forgotPasswordPrompt') }}</div>
+          <div class="text-body-medium mt-2">{{ t('login.forgotPasswordPrompt') }}</div>
           <VBtn variant="text" size="small" color="secondary" :to="localePath('/auth/reset-password')">
             {{ t('login.resetPassword') }}
           </VBtn>

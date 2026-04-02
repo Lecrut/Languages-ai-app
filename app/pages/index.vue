@@ -32,10 +32,10 @@ onMounted(() => {
         </VImg>
 
         <VCardText class="pa-6 pa-md-10 text-center">
-          <blockquote class="text-body-large text-md-h4 font-weight-medium mb-4">
+          <blockquote class="text-headline-large font-weight-medium mb-4">
             "{{ t('home.quote') }}"
           </blockquote>
-          <div class="text-subtitle-1 text-medium-emphasis mb-8">~ {{ t('home.author') }}</div>
+          <div class="text-body-large text-medium-emphasis mb-8">~ {{ t('home.author') }}</div>
 
           <VBtn color="primary" size="large" class="px-10" :to="localePath('/auth/login')">
             {{ t('home.cta') }}

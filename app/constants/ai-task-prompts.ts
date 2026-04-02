@@ -1,10 +1,12 @@
+import type { LearningLevel } from './learning-levels'
+
 export const AI_TASK_GENERATION_TEMPERATURE = 0.4
 
 export interface AiTaskPromptParams {
   subject: string
   nativeLanguage: string
   topic: string
-  level: string
+  level: LearningLevel
   tasksCount: number
 }
 
@@ -31,10 +33,10 @@ export const AI_TASK_SYSTEM_INSTRUCTION = [
   '- options: Array of 4 possible words in the TARGET language to fill the blank.',
   '- correctAnswer: The exact correct word from the options array.',
   '',
-  '4. "flashcard"',
-  '- question: A word or idiom in the user\'s NATIVE language.',
-  '- options: Empty array [].',
-  '- correctAnswer: The precise translation in the TARGET language.',
+  '4. "odd_one_out"',
+  '- question: A category or translation in the user\'s NATIVE language (for example: "Fruits" or "Words meaning happiness").',
+  '- options: Array of 4 words in the TARGET language. Exactly 3 must match the category/meaning, and exactly 1 must be unrelated (the trap).',
+  '- correctAnswer: The exact unrelated trap word from the options array.',
   '',
   '# Global Rules',
   '- Target language strings must be natural, modern, and grammatically perfect.',
@@ -42,7 +44,7 @@ export const AI_TASK_SYSTEM_INSTRUCTION = [
   '{',
   '  "tasks": [',
   '    {',
-  '      "type": "multiple_choice" | "arrange_words" | "fill_blank_select" | "flashcard",',
+  '      "type": "multiple_choice" | "arrange_words" | "fill_blank_select" | "odd_one_out",',
   '      "question": "string",',
   '      "options": ["string"],',
   '      "correctAnswer": "string",',

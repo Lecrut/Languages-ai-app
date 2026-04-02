@@ -5,6 +5,12 @@ import { useResultsStore } from '../../stores/use-results-store'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
 import { useTaskSessionStore } from '../../stores/use-task-session-store'
 import { useUserProfileStore } from '../../stores/use-user-profile-store'
+import { DEFAULT_LEARNING_LEVEL } from '../../constants/learning-levels'
+import {
+  DEFAULT_TASK_TOPIC,
+  TASK_TOPICS,
+  type TaskTopicId,
+} from '../../constants/task-topics'
 
 definePageMeta({
   middleware: 'auth',
@@ -19,6 +25,7 @@ const taskSessionStore = useTaskSessionStore()
 const userProfileStore = useUserProfileStore()
 const isResultSaved = ref(false)
 const isStartingSession = ref(false)
+const selectedTopic = ref<TaskTopicId>(DEFAULT_TASK_TOPIC)
 const { setPageTitle } = usePageHead()
 const isEmailVerified = computed(() => authStore.user?.emailVerified ?? false)
 
@@ -35,6 +42,17 @@ const languageLabelByCode: Record<string, string> = {
   fr: 'French',
   it: 'Italian',
 }
+
+const topicOptions = computed(() => TASK_TOPICS.map(topic => ({
+  title: t(`play.topics.${topic.id}`),
+  value: topic.id,
+})))
+
+const selectedPromptTopic = computed(() => {
+  const current = TASK_TOPICS.find(topic => topic.id === selectedTopic.value)
+
+  return current?.promptTopic ?? TASK_TOPICS[0].promptTopic
+})
 
 const startSession = async () => {
   if (!isEmailVerified.value) {
@@ -54,8 +72,8 @@ const startSession = async () => {
     await taskSessionStore.generateTasksWithAi({
       subject: languageLabelByCode[profile?.learningLanguage ?? 'en'] ?? 'English',
       nativeLanguage: languageLabelByCode[profile?.appLanguage ?? 'pl'] ?? 'Polish',
-      topic: 'Daily life and communication',
-      level: 'A2-B1',
+      topic: selectedPromptTopic.value,
+      level: profile?.level ?? DEFAULT_LEARNING_LEVEL,
     })
 
     taskSessionStore.startSession()
@@ -131,7 +149,7 @@ watch(
     <VCol cols="12" sm="11" md="10" lg="9" xl="8">
       <VCard v-if="!isEmailVerified" class="elevation-8">
         <VCardText class="pt-8 text-center">
-          <VCardTitle class="text-h5 mb-4">{{ t('auth.verifyEmailTitle') || 'Verify your email address' }}</VCardTitle>
+          <VCardTitle class="text-headline-large mb-4">{{ t('auth.verifyEmailTitle') || 'Verify your email address' }}</VCardTitle>
 
           <VAlert
             type="warning"
@@ -155,8 +173,8 @@ watch(
       <VCard v-else-if="!taskSessionStore.started" class="elevation-8">
         <template v-if="taskSessionStore.hasRecoverableSession">
           <VCardText class="pt-8 text-center">
-            <VCardTitle class="text-h5 mb-4">{{ t('play.resumeTitle') }}</VCardTitle>
-            <p class="text-body-1 mb-6 text-medium-emphasis">{{ t('play.resumeDescription') }}</p>
+            <VCardTitle class="text-headline-large mb-4">{{ t('play.resumeTitle') }}</VCardTitle>
+            <p class="text-body-large mb-6 text-medium-emphasis">{{ t('play.resumeDescription') }}</p>
 
             <VBtn
               color="primary"
@@ -169,8 +187,20 @@ watch(
         </template>
 
         <VCardText v-else class="pt-8 text-center">
-          <VCardTitle class="text-h4 mb-4">{{ t('play.title') }}</VCardTitle>
-          <p class="text-body1 mb-6 text-medium-emphasis">{{ t('play.description') }}</p>
+          <VCardTitle class="text-headline-medium mb-4">{{ t('play.title') }}</VCardTitle>
+          <p class="text-body-large mb-6 text-medium-emphasis">{{ t('play.description') }}</p>
+
+          <VSelect
+            v-model="selectedTopic"
+            :items="topicOptions"
+            item-title="title"
+            item-value="value"
+            :label="t('play.topicLabel')"
+            prepend-inner-icon="mdi-shape-outline"
+            variant="outlined"
+            class="mb-6"
+            :disabled="isStartingSession || taskSessionStore.generating"
+          />
 
           <VBtn
             color="primary"

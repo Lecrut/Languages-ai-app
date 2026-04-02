@@ -78,7 +78,7 @@ const mobileNavigationItems = computed(() => {
 })
 
 const setTheme = (themeName: 'light' | 'dark') => {
-  theme.global.name.value = themeName
+  theme.change(themeName)
 
   if (import.meta.client) {
     localStorage.setItem('app-theme', themeName)
@@ -114,7 +114,7 @@ onMounted(() => {
   const storedTheme = localStorage.getItem('app-theme')
 
   if (storedTheme === 'light' || storedTheme === 'dark') {
-    theme.global.name.value = storedTheme
+    theme.change(storedTheme)
   }
 })
 </script>
@@ -124,7 +124,7 @@ onMounted(() => {
     <VContainer class="d-flex align-center justify-space-between">
       <VBtn
         variant="text"
-        class="font-weight-bold text-body-1 px-0 text-none"
+        class="font-weight-bold text-body-large px-0 text-none"
         @click="navigateHome"
       >
         {{ t('app.title') }}

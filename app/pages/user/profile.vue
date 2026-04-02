@@ -3,6 +3,11 @@ import { computed, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useUserProfileStore } from '../../stores/use-user-profile-store'
 import {
+  DEFAULT_LEARNING_LEVEL,
+  LEARNING_LEVELS,
+  type LearningLevel,
+} from '../../constants/learning-levels'
+import {
   TASKS_PER_SESSION_DEFAULT,
   TASKS_PER_SESSION_MAX,
   TASKS_PER_SESSION_MIN,
@@ -26,6 +31,7 @@ onMounted(() => {
 const nick = ref('')
 const appLanguage = ref<AppLocale>('pl')
 const learningLanguage = ref('en')
+const level = ref<LearningLevel>(DEFAULT_LEARNING_LEVEL)
 const tasksPerSession = ref(TASKS_PER_SESSION_DEFAULT)
 const saveSuccess = ref(false)
 const isEditing = ref(false)
@@ -42,6 +48,11 @@ const learningLanguageOptions = computed(() => [
   { title: t('profile.languageFrench'), value: 'fr' },
   { title: t('profile.languageItalian'), value: 'it' },
 ])
+
+const levelOptions = computed(() => LEARNING_LEVELS.map((item) => ({
+  title: item.toUpperCase(),
+  value: item,
+})))
 
 const profile = computed(() => userProfileStore.profile)
 
@@ -61,6 +72,7 @@ const syncFormFromProfile = () => {
   nick.value = profile.value.nick
   appLanguage.value = profile.value.appLanguage === 'en' ? 'en' : 'pl'
   learningLanguage.value = profile.value.learningLanguage
+  level.value = profile.value.level ?? DEFAULT_LEARNING_LEVEL
   tasksPerSession.value = clampTasksPerSession(profile.value.tasksPerSession)
 }
 
@@ -99,6 +111,7 @@ const isFormDirty = computed(() => {
   return nick.value !== profile.value.nick
     || appLanguage.value !== profile.value.appLanguage
     || learningLanguage.value !== profile.value.learningLanguage
+    || level.value !== profile.value.level
     || clampTasksPerSession(tasksPerSession.value) !== clampTasksPerSession(profile.value.tasksPerSession)
 })
 
@@ -138,6 +151,7 @@ const handleSaveProfile = async () => {
       nick: nick.value,
       appLanguage: appLanguage.value,
       learningLanguage: learningLanguage.value,
+      level: level.value,
       tasksPerSession: clampTasksPerSession(tasksPerSession.value),
     })
 
@@ -160,12 +174,12 @@ const handleSaveProfile = async () => {
       <VRow>
         <VCol cols="12" md="5">
           <VCard class="h-100">
-            <VCardTitle class="text-h6 my-3">{{ t('profile.accountTitle') }}</VCardTitle>
+            <VCardTitle class="text-headline-small my-3">{{ t('profile.accountTitle') }}</VCardTitle>
             <VCardText class="d-flex flex-column ga-3">
-              <div class="text-body-2">
+              <div class="text-body-medium">
                 {{ t('profile.email') }}: {{ authStore.user?.email ?? profile?.email ?? '-' }}
               </div>
-              <div class="text-body-2">
+              <div class="text-body-medium">
                 {{ t('profile.createdAt') }}: {{ createdAtFormatted }}
               </div>
             </VCardText>
@@ -174,7 +188,7 @@ const handleSaveProfile = async () => {
 
         <VCol cols="12" md="7" class="d-flex justify-center">
           <VCard class="w-100 mx-auto pb-6 pb-md-8">
-            <VCardTitle class="text-h5 text-center my-3">{{ t('profile.title') }}</VCardTitle>
+            <VCardTitle class="text-headline-large text-center my-3">{{ t('profile.title') }}</VCardTitle>
             <VCardText class="px-6">
               <VAlert
                 v-if="userProfileStore.error"
@@ -235,6 +249,20 @@ const handleSaveProfile = async () => {
                 </VCol>
 
                 <VCol cols="12">
+                  <VSelect
+                    v-model="level"
+                    :items="levelOptions"
+                    item-title="title"
+                    item-value="value"
+                    :label="t('profile.learningLevel')"
+                    prepend-inner-icon="mdi-school"
+                    variant="outlined"
+                    class="mb-3"
+                    :disabled="!isEditing || userProfileStore.loading"
+                  />
+                </VCol>
+
+                <VCol cols="12">
                   <VSlider
                     v-model="tasksPerSession"
                     :label="t('profile.tasksPerSession')"
@@ -246,7 +274,7 @@ const handleSaveProfile = async () => {
                     :disabled="!isEditing || userProfileStore.loading"
                     class="mt-2"
                   />
-                  <div class="text-caption text-medium-emphasis">
+                  <div class="text-body-small text-medium-emphasis">
                     {{ t('profile.tasksPerSessionHint', { min: TASKS_PER_SESSION_MIN, max: TASKS_PER_SESSION_MAX }) }}
                   </div>
                 </VCol>

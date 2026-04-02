@@ -31,16 +31,16 @@ const fillBlankSelectTaskSchema = baseTaskSchema.extend({
   options: z.array(z.string().trim().min(1)).min(3).max(4),
 })
 
-const flashcardTaskSchema = baseTaskSchema.extend({
+const oddOneOutTaskSchema = baseTaskSchema.extend({
   type: z.literal(TASK_TYPES[3]),
-  options: z.array(z.string().trim().min(1)),
+  options: z.array(z.string().trim().min(1)).length(4),
 })
 
 export const taskSchema = z.discriminatedUnion('type', [
   multipleChoiceTaskSchema,
   arrangeWordsTaskSchema,
   fillBlankSelectTaskSchema,
-  flashcardTaskSchema,
+  oddOneOutTaskSchema,
 ])
 
 export const taskListSchema = z.array(taskSchema)

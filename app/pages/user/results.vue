@@ -101,7 +101,7 @@ watch(
     <VRow>
       <VCol cols="12" md="4" lg="3">
         <VCard>
-          <VCardTitle class="text-h6">{{ t('results.statsTitle') }}</VCardTitle>
+          <VCardTitle class="text-headline-small">{{ t('results.statsTitle') }}</VCardTitle>
           <VCardText class="d-flex flex-column ga-4">
             <VProgressCircular
               :model-value="summaryAccuracy"
@@ -110,7 +110,7 @@ watch(
               :width="12"
               class="align-self-center"
             >
-              <span class="text-h6">{{ summaryAccuracy }}%</span>
+              <span class="text-headline-small">{{ summaryAccuracy }}%</span>
             </VProgressCircular>
 
             <VChip color="success" variant="flat" prepend-icon="mdi-check">
@@ -121,7 +121,7 @@ watch(
               {{ t('results.averageCorrectPerSession', { count: averageCorrectPerSession }) }}
             </VChip>
 
-            <p class="text-body-2 text-medium-emphasis mb-0">
+            <p class="text-body-medium text-medium-emphasis mb-0">
               {{ t('results.statsInfo') }}
             </p>
           </VCardText>
@@ -130,7 +130,7 @@ watch(
 
       <VCol cols="12" md="8" lg="6">
         <VCard class="mb-4">
-          <VCardTitle class="text-h5">{{ t('results.title') }}</VCardTitle>
+          <VCardTitle class="text-headline-large">{{ t('results.title') }}</VCardTitle>
           <VCardText>{{ t('results.description') }}</VCardText>
         </VCard>
 
@@ -143,7 +143,7 @@ watch(
         >
           <VCardText class="d-flex flex-column ga-3">
             <div class="d-flex align-center justify-space-between flex-wrap ga-2">
-              <span class="text-subtitle-1">{{ formatDateTime(session.date, locale) }}</span>
+              <span class="text-body-large">{{ formatDateTime(session.date, locale) }}</span>
               <VChip color="primary" variant="tonal">
                 {{ t('results.sessionTasks', { count: session.totalTasks }) }}
               </VChip>
@@ -183,9 +183,9 @@ watch(
 
       <VCol v-if="lgAndUp" cols="12" lg="3">
         <VCard>
-          <VCardTitle class="text-h6">{{ t('results.detailsTitle') }}</VCardTitle>
+          <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
           <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
-            <p class="text-body-2 text-medium-emphasis mb-0">
+            <p class="text-body-medium text-medium-emphasis mb-0">
               {{ formatDateTime(selectedSession.date, locale) }}
             </p>
 
@@ -198,12 +198,12 @@ watch(
               <VCardText class="d-flex flex-column ga-2">
                 <div class="d-flex align-center ga-2">
                   <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
-                  <span class="text-subtitle-2">{{ task.question }}</span>
+                  <span class="text-label-large">{{ task.question }}</span>
                 </div>
-                <p class="mb-0 text-body-2">
+                <p class="mb-0 text-body-medium">
                   {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
                 </p>
-                <p class="mb-0 text-body-2">
+                <p class="mb-0 text-body-medium">
                   {{ t('results.correctAnswerLabel') }}: {{ task.correctAnswer }}
                 </p>
               </VCardText>
@@ -221,9 +221,9 @@ watch(
     <ClientOnly>
       <VDialog v-model="detailsDialogVisible" max-width="720">
         <VCard>
-          <VCardTitle class="text-h6">{{ t('results.detailsTitle') }}</VCardTitle>
+          <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
           <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
-            <p class="text-body-2 text-medium-emphasis mb-0">
+            <p class="text-body-medium text-medium-emphasis mb-0">
               {{ formatDateTime(selectedSession.date, locale) }}
             </p>
 
@@ -236,12 +236,12 @@ watch(
               <VCardText class="d-flex flex-column ga-2">
                 <div class="d-flex align-center ga-2">
                   <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
-                  <span class="text-subtitle-2">{{ task.question }}</span>
+                  <span class="text-label-large">{{ task.question }}</span>
                 </div>
-                <p class="mb-0 text-body-2">
+                <p class="mb-0 text-body-medium">
                   {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
                 </p>
-                <p class="mb-0 text-body-2">
+                <p class="mb-0 text-body-medium">
                   {{ t('results.correctAnswerLabel') }}: {{ task.correctAnswer }}
                 </p>
               </VCardText>

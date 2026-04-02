@@ -16,6 +16,7 @@ import {
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import type { AuthUser } from '../models/auth-user'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
+import { DEFAULT_LEARNING_LEVEL } from '../constants/learning-levels'
 import { TASKS_PER_SESSION_DEFAULT } from '../constants/task-session-settings'
 import { getDefaultNicknameFromEmail } from '../helpers/auth-helpers'
 import { useFirebase } from '../composables/useFirebase'
@@ -162,6 +163,7 @@ export const useAuthStore = defineStore('auth', () => {
         nick: getDefaultNicknameFromEmail(userCredential.user.email),
         appLanguage: 'pl',
         learningLanguage: 'en',
+        level: DEFAULT_LEARNING_LEVEL,
         tasksPerSession: TASKS_PER_SESSION_DEFAULT,
         email: userCredential.user.email ?? '',
         createdAt: serverTimestamp(),
