@@ -84,7 +84,17 @@
   "play": {
     "title": "Graj",
     "description": "Nowy zestaw zadań zostanie wygenerowany za pośrednictwem AI na podstawie Twojego poziomu.",
+    "selectTopic": "Wybierz temat:",
     "topicLabel": "Tematyka sesji",
+    "selectMode": "Wybierz zestaw zadań:",
+    "newTasks": "Nowe zadania",
+    "newTasksDescription": "Zadania, których nigdy nie robiłeś",
+    "improveTask": "Zadania do poprawy",
+    "improveTaskDescription": "Zadania, które poszły Ci źle",
+    "repeatTasks": "Powtórka",
+    "repeatTasksDescription": "Zadania, które już zdałeś",
+    "aiTasks": "Zadania od AI",
+    "aiTasksDescription": "Wygeneruj nowe zadania za pomocą AI",
     "topics": {
       "varied": "Różne",
       "grammar": "Gramatyka",

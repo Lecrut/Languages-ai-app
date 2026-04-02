@@ -113,13 +113,13 @@ watch(
               <span class="text-headline-small">{{ summaryAccuracy }}%</span>
             </VProgressCircular>
 
-            <VChip color="success" variant="flat" prepend-icon="mdi-check">
+            <VAlert type="success" variant="tonal" prepend-icon="mdi-check">
               {{ t('results.correctCount', { count: summaryCorrectCount }) }}
-            </VChip>
+            </VAlert>
 
-            <VChip color="info" variant="tonal">
+            <VAlert type="info" variant="tonal">
               {{ t('results.averageCorrectPerSession', { count: averageCorrectPerSession }) }}
-            </VChip>
+            </VAlert>
 
             <p class="text-body-medium text-medium-emphasis mb-0">
               {{ t('results.statsInfo') }}
@@ -128,7 +128,7 @@ watch(
         </VCard>
       </VCol>
 
-      <VCol cols="12" md="8" lg="6">
+      <VCol cols="12" md="8" lg="5">
         <VCard class="mb-4">
           <VCardTitle class="text-headline-large">{{ t('results.title') }}</VCardTitle>
           <VCardText>{{ t('results.description') }}</VCardText>
@@ -181,7 +181,7 @@ watch(
         </VAlert>
       </VCol>
 
-      <VCol v-if="lgAndUp" cols="12" lg="3">
+      <VCol v-if="lgAndUp" cols="12" lg="4">
         <VCard>
           <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
           <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">

@@ -5,12 +5,14 @@ import { useResultsStore } from '../../stores/use-results-store'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
 import { useTaskSessionStore } from '../../stores/use-task-session-store'
 import { useUserProfileStore } from '../../stores/use-user-profile-store'
+import { useTaskLoader, type TaskLoadMode } from '../../composables/useTaskLoader'
 import { DEFAULT_LEARNING_LEVEL } from '../../constants/learning-levels'
 import {
   DEFAULT_TASK_TOPIC,
   TASK_TOPICS,
   type TaskTopicId,
 } from '../../constants/task-topics'
+import { TASKS_PER_SESSION_DEFAULT, clampTasksPerSession } from '../../constants/task-session-settings'
 
 definePageMeta({
   middleware: 'auth',
@@ -23,9 +25,11 @@ const authStore = useAuthStore()
 const resultsStore = useResultsStore()
 const taskSessionStore = useTaskSessionStore()
 const userProfileStore = useUserProfileStore()
+const taskLoader = useTaskLoader()
 const isResultSaved = ref(false)
 const isStartingSession = ref(false)
 const selectedTopic = ref<TaskTopicId>(DEFAULT_TASK_TOPIC)
+const selectedMode = ref<TaskLoadMode | null>(null)
 const { setPageTitle } = usePageHead()
 const isEmailVerified = computed(() => authStore.user?.emailVerified ?? false)
 
@@ -54,7 +58,34 @@ const selectedPromptTopic = computed(() => {
   return current?.promptTopic ?? TASK_TOPICS[0].promptTopic
 })
 
-const startSession = async () => {
+const taskLoadModeOptions = computed(() => [
+  {
+    mode: 'new' as const,
+    label: t('play.newTasks') || 'New tasks',
+    icon: 'mdi-plus-circle',
+    description: t('play.newTasksDescription') || 'Tasks you haven\'t done before',
+  },
+  {
+    mode: 'improve' as const,
+    label: t('play.improveTask') || 'Tasks to improve',
+    icon: 'mdi-autorenew',
+    description: t('play.improveTaskDescription') || 'Tasks you failed before',
+  },
+  {
+    mode: 'repeat' as const,
+    label: t('play.repeatTasks') || 'Repeat',
+    icon: 'mdi-reload',
+    description: t('play.repeatTasksDescription') || 'Tasks you already passed',
+  },
+  {
+    mode: 'ai' as const,
+    label: t('play.aiTasks') || 'AI Tasks',
+    icon: 'mdi-lightbulb',
+    description: t('play.aiTasksDescription') || 'Generate new tasks with AI',
+  },
+])
+
+const startSessionWithMode = async (mode: TaskLoadMode) => {
   if (!isEmailVerified.value) {
     return
   }
@@ -65,21 +96,39 @@ const startSession = async () => {
 
   isStartingSession.value = true
   isResultSaved.value = false
+  selectedMode.value = mode
 
   try {
     const profile = userProfileStore.profile
+    const currentUser = authStore.user
 
-    await taskSessionStore.generateTasksWithAi({
-      subject: languageLabelByCode[profile?.learningLanguage ?? 'en'] ?? 'English',
-      nativeLanguage: languageLabelByCode[profile?.appLanguage ?? 'pl'] ?? 'Polish',
-      topic: selectedPromptTopic.value,
-      level: profile?.level ?? DEFAULT_LEARNING_LEVEL,
+    if (!currentUser?.uid) {
+      throw new Error('User not logged in')
+    }
+
+    const tasksCount = clampTasksPerSession(profile?.tasksPerSession ?? TASKS_PER_SESSION_DEFAULT)
+
+    // Load tasks using the task loader with fallback logic
+    const tasks = await taskLoader.loadTasks({
+      mode,
+      tasksCount,
+      userId: currentUser.uid,
+      aiPromptParams: {
+        subject: languageLabelByCode[profile?.learningLanguage ?? 'en'] ?? 'English',
+        nativeLanguage: languageLabelByCode[profile?.appLanguage ?? 'pl'] ?? 'Polish',
+        topic: selectedPromptTopic.value,
+        level: profile?.level ?? DEFAULT_LEARNING_LEVEL,
+      },
     })
 
+    // Set tasks in session store
+    taskSessionStore.setSessionTasks(tasks)
     taskSessionStore.startSession()
   }
-  catch {
-    // Errors are handled by taskSessionStore.generationError watcher/snackbar.
+  catch (error) {
+    const snackbarStore = useSnackbarStore()
+    const message = error instanceof Error ? error.message : 'Failed to load tasks'
+    snackbarStore.showError(message)
   }
   finally {
     isStartingSession.value = false
@@ -97,6 +146,7 @@ const goToNextTask = () => {
 const closeSession = async () => {
   taskSessionStore.reset()
   isResultSaved.value = false
+  selectedMode.value = null
   await router.push(localePath('/user'))
 }
 
@@ -112,7 +162,7 @@ const resendVerificationEmail = async () => {
 }
 
 watch(
-  () => taskSessionStore.generationError,
+  () => taskLoader.error.value,
   (error) => {
     if (error) {
       const snackbarStore = useSnackbarStore()
@@ -186,31 +236,54 @@ watch(
           </VCardText>
         </template>
 
-        <VCardText v-else class="pt-8 text-center">
-          <VCardTitle class="text-headline-medium mb-4">{{ t('play.title') }}</VCardTitle>
-          <p class="text-body-large mb-6 text-medium-emphasis">{{ t('play.description') }}</p>
+        <VCardText v-else class="pt-8">
+          <VCardTitle class="text-headline-large mb-2 text-center">{{ t('play.title') }}</VCardTitle>
+          <p class="text-body-large mb-6 text-center text-medium-emphasis">{{ t('play.description') }}</p>
 
-          <VSelect
-            v-model="selectedTopic"
-            :items="topicOptions"
-            item-title="title"
-            item-value="value"
-            :label="t('play.topicLabel')"
-            prepend-inner-icon="mdi-shape-outline"
-            variant="outlined"
-            class="mb-6"
-            :disabled="isStartingSession || taskSessionStore.generating"
-          />
+          <div class="mb-6">
+            <p class="text-body-medium font-weight-bold mb-4">{{ t('play.selectTopic') || 'Select a topic:' }}</p>
+            <VSelect
+              v-model="selectedTopic"
+              :items="topicOptions"
+              item-title="title"
+              item-value="value"
+              :label="t('play.topicLabel')"
+              prepend-inner-icon="mdi-shape-outline"
+              variant="outlined"
+              :disabled="isStartingSession || taskLoader.loading.value"
+            />
+          </div>
 
-          <VBtn
-            color="primary"
-            size="large"
-            :loading="isStartingSession || taskSessionStore.generating"
-            :disabled="isStartingSession || taskSessionStore.generating"
-            @click="startSession"
-          >
-            {{ t('play.play') || t('play.start') }}
-          </VBtn>
+          <div>
+            <p class="text-body-medium font-weight-bold mb-4">{{ t('play.selectMode') || 'Choose a task set:' }}</p>
+            <VRow>
+              <VCol
+                v-for="option in taskLoadModeOptions"
+                :key="option.mode"
+                cols="12"
+                sm="6"
+              >
+                <VCard
+                  :class="['h-100 cursor-pointer', selectedMode === option.mode ? 'border-primary border-2' : '']"
+                  variant="outlined"
+                  :color="selectedMode === option.mode ? 'primary-container' : ''"
+                  @click="startSessionWithMode(option.mode)"
+                >
+                  <VCardText class="d-flex flex-column align-center text-center gap-2 pa-4">
+                    <VIcon size="32" :icon="option.icon" />
+                    <p class="text-body-large font-weight-bold">{{ option.label }}</p>
+                    <p class="text-body-small text-medium-emphasis">{{ option.description }}</p>
+                    <VProgressCircular
+                      v-if="selectedMode === option.mode && (isStartingSession || taskLoader.loading.value)"
+                      indeterminate
+                      size="24"
+                      class="mt-2"
+                    />
+                  </VCardText>
+                </VCard>
+              </VCol>
+            </VRow>
+          </div>
         </VCardText>
       </VCard>
 
@@ -226,7 +299,7 @@ watch(
         :current-answer="taskSessionStore.currentEvaluation?.userAnswer ?? null"
         @submit-answer="submitAnswer"
         @next="goToNextTask"
-        @restart="startSession"
+        @restart="startSessionWithMode('ai')"
         @close="closeSession"
       />
     </VCol>

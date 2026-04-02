@@ -172,6 +172,22 @@ export const useTaskSessionStore = defineStore('task-session', () => {
     generationError.value = null
   }
 
+  /**
+   * Set tasks directly (used by useTaskLoader)
+   * This bypasses AI generation and sets pre-loaded tasks
+   */
+  const setSessionTasks = (sessionTasks: TaskSessionTask[]) => {
+    if (sessionTasks.length === 0) {
+      generationError.value = 'No tasks loaded'
+      return
+    }
+
+    tasks.value = sessionTasks
+    currentTaskIndex.value = 0
+    evaluations.value = {}
+    generationError.value = null
+  }
+
   const sessionTasksCount = computed(() => clampTasksPerSession(
     userProfileStore.profile?.tasksPerSession ?? TASKS_PER_SESSION_DEFAULT,
   ))
@@ -326,6 +342,7 @@ export const useTaskSessionStore = defineStore('task-session', () => {
     taskResults,
     hasRecoverableSession,
     startSession,
+    setSessionTasks,
     generateTasksWithAi,
     initializeRecovery,
     resumeRecoverableSession,

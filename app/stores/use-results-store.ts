@@ -12,11 +12,13 @@ import {
   startAfter,
   Timestamp,
   where,
+  setDoc,
   type DocumentData,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import type { ResultSessionItem, ResultTaskPayload } from '../models/result'
+import type { SaveTaskResultPayload } from '../models/task-result'
 import { useFirebase } from '../composables/useFirebase'
 import { useSharedStore } from './use-shared-store'
 
@@ -43,6 +45,33 @@ export const useResultsStore = defineStore('results', () => {
   const saving = computed(() => sharedStore.loading)
   const error = computed(() => sharedStore.error)
 
+  /**
+   * Saves a single task result to users/{userId}/results/{taskId}
+   * Creates or updates the document with isPassed and lastAttempt timestamp
+   */
+  const saveTaskResult = async (uid: string, taskId: string, payload: SaveTaskResultPayload) => {
+    const { db } = useFirebase()
+
+    try {
+      const resultDocRef = doc(
+        db,
+        FIREBASE_COLLECTIONS.users,
+        uid,
+        'results',
+        taskId,
+      )
+
+      await withTimeout(
+        setDoc(resultDocRef, payload, { merge: true }),
+        'Saving task result timed out',
+      )
+    }
+    catch (err) {
+      console.error(`Failed to save task result for task ${taskId}:`, err)
+      throw err
+    }
+  }
+
   const saveResultSummary = async (uid: string, taskResults: ResultTaskPayload[]) => {
     const { db } = useFirebase()
 
@@ -59,6 +88,7 @@ export const useResultsStore = defineStore('results', () => {
         userAnswer,
       }))
 
+      // Save session-level results
       await withTimeout(
         addDoc(collection(db, FIREBASE_COLLECTIONS.results), {
           userReference,
@@ -66,6 +96,16 @@ export const useResultsStore = defineStore('results', () => {
           task,
         }),
         'Saving results timed out',
+      )
+
+      // Save individual task results to subcollection users/{uid}/results/{taskId}
+      await Promise.all(
+        taskResults.map(taskResult =>
+          saveTaskResult(uid, taskResult.taskId, {
+            isPassed: taskResult.isPassed,
+            lastAttempt: serverTimestamp(),
+          }),
+        ),
       )
 
       const mappedTasks = taskResults.map(taskEntry => ({
@@ -197,6 +237,7 @@ export const useResultsStore = defineStore('results', () => {
     loadingMore,
     saving,
     error,
+    saveTaskResult,
     saveResultSummary,
     fetchLatestSessions,
     reset,

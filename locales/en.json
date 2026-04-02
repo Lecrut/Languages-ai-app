@@ -84,7 +84,17 @@
   "play": {
     "title": "Play",
     "description": "A new set of tasks will be generated using AI based on your level.",
+    "selectTopic": "Select a topic:",
     "topicLabel": "Session topic",
+    "selectMode": "Choose a task set:",
+    "newTasks": "New tasks",
+    "newTasksDescription": "Tasks you haven't done before",
+    "improveTask": "Tasks to improve",
+    "improveTaskDescription": "Tasks you failed before",
+    "repeatTasks": "Repeat",
+    "repeatTasksDescription": "Tasks you already passed",
+    "aiTasks": "AI Tasks",
+    "aiTasksDescription": "Generate new tasks with AI",
     "topics": {
       "varied": "Varied",
       "grammar": "Grammar",
