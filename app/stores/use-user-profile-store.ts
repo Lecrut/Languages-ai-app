@@ -16,6 +16,19 @@ import type { UserProfile, UserProfileUpdatePayload } from '../models/user-profi
 import { useFirebase } from '../composables/useFirebase'
 import { useSharedStore } from './use-shared-store'
 
+const FIRESTORE_OPERATION_TIMEOUT_MS = 10000
+
+const withTimeout = async <T>(operation: Promise<T>, timeoutMessage: string): Promise<T> => {
+  return await Promise.race([
+    operation,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(timeoutMessage))
+      }, FIRESTORE_OPERATION_TIMEOUT_MS)
+    }),
+  ])
+}
+
 interface FirestoreUserProfile {
   uid: string
   nick: string
@@ -66,21 +79,30 @@ export const useUserProfileStore = defineStore('user-profile', () => {
 
     try {
       const userDocRef = getUserDocRef(authUser.uid)
-      const snapshot = await getDoc(userDocRef)
+      const snapshot = await withTimeout(
+        getDoc(userDocRef),
+        'User profile fetch timed out',
+      )
 
       if (!snapshot.exists()) {
-        await setDoc(userDocRef, {
-          uid: authUser.uid,
-          nick: getDefaultNicknameFromEmail(authUser.email),
-          appLanguage: 'pl',
-          learningLanguage: 'en',
-          tasksPerSession: TASKS_PER_SESSION_DEFAULT,
-          email: authUser.email ?? '',
-          createdAt: serverTimestamp(),
-        })
+        await withTimeout(
+          setDoc(userDocRef, {
+            uid: authUser.uid,
+            nick: getDefaultNicknameFromEmail(authUser.email),
+            appLanguage: 'pl',
+            learningLanguage: 'en',
+            tasksPerSession: TASKS_PER_SESSION_DEFAULT,
+            email: authUser.email ?? '',
+            createdAt: serverTimestamp(),
+          }),
+          'User profile creation timed out',
+        )
       }
 
-      const refreshedSnapshot = await getDoc(userDocRef)
+      const refreshedSnapshot = await withTimeout(
+        getDoc(userDocRef),
+        'User profile refresh timed out',
+      )
 
       if (refreshedSnapshot.exists()) {
         setProfileFromFirestore(refreshedSnapshot.data() as FirestoreUserProfile)
@@ -102,12 +124,15 @@ export const useUserProfileStore = defineStore('user-profile', () => {
     try {
       const userDocRef = getUserDocRef(uid)
 
-      await updateDoc(userDocRef, {
-        nick: payload.nick,
-        appLanguage: payload.appLanguage,
-        learningLanguage: payload.learningLanguage,
-        tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
-      })
+      await withTimeout(
+        updateDoc(userDocRef, {
+          nick: payload.nick,
+          appLanguage: payload.appLanguage,
+          learningLanguage: payload.learningLanguage,
+          tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
+        }),
+        'User profile update timed out',
+      )
 
       if (profile.value) {
         profile.value = {

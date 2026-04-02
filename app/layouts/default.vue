@@ -12,18 +12,19 @@ const sharedStore = useSharedStore()
     <AppTopBar />
     <AppSnackbar />
 
-    <VMain class="d-flex">
-      <VContainer
-        v-if="sharedStore.loading"
-        fluid
-        class="fill-height d-flex align-center justify-center pa-0"
-      >
-        <VProgressCircular indeterminate color="primary" :size="68" :width="6" />
-      </VContainer>
-
-      <VContainer v-else :class="contentContainerClass">
+    <VMain class="position-relative">
+      <VContainer :class="contentContainerClass">
         <slot />
       </VContainer>
+
+      <VOverlay
+        :model-value="sharedStore.loading"
+        class="align-center justify-center"
+        contained
+        persistent
+      >
+        <VProgressCircular indeterminate color="primary" :size="104" :width="8" />
+      </VOverlay>
     </VMain>
   </div>
 </template>

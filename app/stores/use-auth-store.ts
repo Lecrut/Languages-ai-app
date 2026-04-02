@@ -25,6 +25,19 @@ import { useSnackbarStore } from './use-snackbar-store'
 import { useTaskSessionStore } from './use-task-session-store'
 import { useUserProfileStore } from './use-user-profile-store'
 
+const AUTH_OPERATION_TIMEOUT_MS = 10000
+
+const withTimeout = async <T>(operation: Promise<T>, timeoutMessage: string): Promise<T> => {
+  return await Promise.race([
+    operation,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(timeoutMessage))
+      }, AUTH_OPERATION_TIMEOUT_MS)
+    }),
+  ])
+}
+
 const mapUser = (user: User | null): AuthUser | null => {
   if (!user) {
     return null
@@ -178,10 +191,13 @@ export const useAuthStore = defineStore('auth', () => {
     sharedStore.clearError()
 
     try {
-      await signOut(auth)
+      await withTimeout(
+        signOut(auth),
+        'Logout timed out',
+      )
       reset()
 
-      useTaskSessionStore().reset()
+      useTaskSessionStore().reset({ preserveRecoverableSession: true })
       useResultsStore().reset()
       useUserProfileStore().reset()
       useSnackbarStore().reset()

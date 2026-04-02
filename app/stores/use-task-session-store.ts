@@ -31,7 +31,16 @@ interface GenerateTasksWithAiParams extends Omit<AiTaskPromptParams, 'tasksCount
   tasksCount?: number
 }
 
-const normalizeAnswer = (value: string) => value.trim().toLowerCase()
+interface ResetTaskSessionOptions {
+  preserveRecoverableSession?: boolean
+}
+
+const normalizeAnswer = (value: string) => value
+  .normalize('NFKC')
+  .toLowerCase()
+  .replace(/\s+/g, ' ')
+  .replace(/\s+([?!.,;:])/g, '$1')
+  .trim()
 const FLASHCARD_KNOWN_ANSWER = '__flashcard_known__'
 
 export const useTaskSessionStore = defineStore('task-session', () => {
@@ -43,6 +52,7 @@ export const useTaskSessionStore = defineStore('task-session', () => {
   const generating = ref(false)
   const generationError = ref<string | null>(null)
   const recoverableSession = ref<PersistedTaskSession | null>(null)
+  const persistenceSuspended = ref(false)
 
   const totalTasks = computed(() => tasks.value.length)
   const currentTask = computed(() => tasks.value[currentTaskIndex.value] ?? null)
@@ -83,6 +93,10 @@ export const useTaskSessionStore = defineStore('task-session', () => {
 
   const saveSessionSnapshot = () => {
     if (!import.meta.client) {
+      return
+    }
+
+    if (persistenceSuspended.value) {
       return
     }
 
@@ -263,14 +277,38 @@ export const useTaskSessionStore = defineStore('task-session', () => {
     currentTaskIndex.value += 1
   }
 
-  const reset = () => {
+  const reset = (options?: ResetTaskSessionOptions) => {
+    const shouldPreserveRecoverableSession = Boolean(options?.preserveRecoverableSession)
+
+    if (import.meta.client && shouldPreserveRecoverableSession) {
+      const isRecoverableInProgress = started.value
+        && tasks.value.length > 0
+        && currentTaskIndex.value < tasks.value.length
+
+      if (isRecoverableInProgress) {
+        const payload: PersistedTaskSession = {
+          version: TASK_SESSION_STORAGE.version,
+          tasks: tasks.value,
+          currentTaskIndex: currentTaskIndex.value,
+          evaluations: evaluations.value,
+        }
+
+        localStorage.setItem(TASK_SESSION_STORAGE.key, JSON.stringify(payload))
+      }
+    }
+
+    persistenceSuspended.value = true
     started.value = false
     tasks.value = []
     currentTaskIndex.value = 0
     evaluations.value = {}
     generationError.value = null
     recoverableSession.value = null
-    saveSessionSnapshot()
+    persistenceSuspended.value = false
+
+    if (!shouldPreserveRecoverableSession) {
+      saveSessionSnapshot()
+    }
   }
 
   watch(

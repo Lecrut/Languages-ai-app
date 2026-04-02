@@ -21,6 +21,18 @@ import { useFirebase } from '../composables/useFirebase'
 import { useSharedStore } from './use-shared-store'
 
 const PAGE_SIZE = 10
+const FIRESTORE_OPERATION_TIMEOUT_MS = 10000
+
+const withTimeout = async <T>(operation: Promise<T>, timeoutMessage: string): Promise<T> => {
+  return await Promise.race([
+    operation,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(timeoutMessage))
+      }, FIRESTORE_OPERATION_TIMEOUT_MS)
+    }),
+  ])
+}
 
 export const useResultsStore = defineStore('results', () => {
   const sharedStore = useSharedStore()
@@ -47,11 +59,14 @@ export const useResultsStore = defineStore('results', () => {
         userAnswer,
       }))
 
-      await addDoc(collection(db, FIREBASE_COLLECTIONS.results), {
-        userReference,
-        date: serverTimestamp(),
-        task,
-      })
+      await withTimeout(
+        addDoc(collection(db, FIREBASE_COLLECTIONS.results), {
+          userReference,
+          date: serverTimestamp(),
+          task,
+        }),
+        'Saving results timed out',
+      )
 
       const mappedTasks = taskResults.map(taskEntry => ({
         id: taskEntry.taskId,
@@ -125,7 +140,10 @@ export const useResultsStore = defineStore('results', () => {
           )
         : baseQuery
 
-      const snapshot = await getDocs(paginatedQuery)
+      const snapshot = await withTimeout(
+        getDocs(paginatedQuery),
+        'Fetching results timed out',
+      )
       const nextSessions = snapshot.docs.map((sessionDocument) => {
         const data = sessionDocument.data() as {
           date?: Timestamp
