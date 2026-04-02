@@ -211,22 +211,23 @@ export const useTaskSessionStore = defineStore('task-session', () => {
       const savedTasks = await Promise.all(parsed.tasks.map(async (task) => {
         const docRef = await addDoc(collection(db, FIREBASE_COLLECTIONS.tasks), {
           subject: params.subject,
+          targetLanguage: task.targetLanguage,
           topic: params.topic,
+          level: task.level,
           type: task.type,
           question: task.question,
           options: task.options,
           correctAnswer: task.correctAnswer,
           hint: task.hint,
-          targetLanguage: params.subject,
-          nativeLanguage: params.nativeLanguage,
-          level: params.level,
           createdAt: serverTimestamp(),
         })
 
         return {
           id: docRef.id,
           subject: params.subject,
+          targetLanguage: task.targetLanguage,
           topic: params.topic,
+          level: task.level,
           type: task.type,
           question: task.question,
           options: task.options,

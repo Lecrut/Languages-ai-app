@@ -9,6 +9,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'Languages AI',
+      titleTemplate: titleChunk => titleChunk ? `${titleChunk} | Languages AI` : 'Languages AI',
       htmlAttrs: {
         lang: 'pl',
       },

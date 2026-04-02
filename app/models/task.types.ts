@@ -1,4 +1,5 @@
 import type { DocumentData, DocumentReference } from 'firebase/firestore'
+import type { LearningLevel } from '../constants/learning-levels'
 
 export const TASK_TYPES = [
   'multiple_choice',
@@ -12,7 +13,9 @@ export type TaskType = (typeof TASK_TYPES)[number]
 export interface TaskDocument {
   reference: DocumentReference<DocumentData>
   subject: string
+  targetLanguage: string
   topic: string
+  level: LearningLevel
   type: TaskType
   question: string
   options: string[]

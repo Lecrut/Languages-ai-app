@@ -192,6 +192,7 @@ onMounted(() => {
       v-if="smAndDown"
       grow
       color="primary"
+      rounded="0"
       :model-value="currentRoutePath"
     >
       <VBtn

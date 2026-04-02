@@ -82,13 +82,13 @@ export function useTaskLoader() {
     }
   }
 
-  const generateAiTasks = async (params: Omit<AiTaskPromptParams, 'tasksCount'>, count: number): Promise<TaskSessionTask[]> => {
+  const generateAiTasks = async (promptParams: Omit<AiTaskPromptParams, 'tasksCount'>, count: number): Promise<TaskSessionTask[]> => {
     try {
       const { parseAiGeneratedTaskList } = await import('../models/ai-generated-task.schema')
       const { addDoc } = await import('firebase/firestore')
 
       const rawJson = await generateTasksJsonWithAi({
-        ...params,
+        ...promptParams,
         tasksCount: count,
       })
 
@@ -98,11 +98,13 @@ export function useTaskLoader() {
         parsed.tasks.map(async (task) => {
           const tasksCollectionRef = collection(db, FIREBASE_COLLECTIONS.tasks)
           const docRef = await addDoc(tasksCollectionRef, {
+            subject: promptParams.subject,
             ...task,
             createdAt: new Date().toISOString(),
           })
 
           return {
+            subject: promptParams.subject,
             ...task,
             id: docRef.id,
           } as TaskSessionTask

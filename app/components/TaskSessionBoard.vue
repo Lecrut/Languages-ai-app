@@ -42,6 +42,17 @@ const scorePercentage = computed(() => {
 })
 const selectedAnswerLabel = computed(() => props.currentAnswer ?? '')
 const correctAnswerLabel = computed(() => props.task?.correctAnswer ?? '')
+const taskHint = computed(() => {
+  const hint = props.task?.hint
+
+  if (typeof hint !== 'string') {
+    return null
+  }
+
+  const normalizedHint = hint.trim()
+
+  return normalizedHint.length > 0 ? normalizedHint : null
+})
 const questionTypographyClass = computed(() => (mdAndUp.value ? 'text-display-medium' : 'text-headline-small'))
 const showSelectedAnswerTile = computed(() => {
   if (!isAnswered.value) {
@@ -202,11 +213,39 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
       <VRow v-else-if="hasTask">
         <VCol cols="12">
           <div class="px-1 px-md-2 pb-2 pb-md-4">
-            <p class="text-body-small text-medium-emphasis mb-2">
-              {{ task?.topic }}
-            </p>
-            <div :class="[questionTypographyClass, 'font-weight-bold mb-0 text-wrap whitespace-normal']">
-              {{ task?.question }}
+            <div class="d-flex flex-wrap ga-2 mb-2">
+              <VChip size="small" variant="tonal" color="primary">
+                {{ task?.targetLanguage ?? task?.subject }}
+              </VChip>
+              <VChip size="small" variant="tonal" color="secondary">
+                {{ task?.level }}
+              </VChip>
+              <VChip size="small" variant="tonal" color="info">
+                {{ task?.topic }}
+              </VChip>
+            </div>
+            <div class="d-flex align-start ga-2">
+              <div :class="[questionTypographyClass, 'font-weight-bold mb-0 text-wrap whitespace-normal flex-grow-1']">
+                {{ task?.question }}
+              </div>
+              <VTooltip
+                v-if="taskHint"
+                location="top"
+                max-width="320"
+              >
+                <template #activator="{ props: tooltipProps }">
+                  <VBtn
+                    v-bind="tooltipProps"
+                    icon="mdi-help-circle-outline"
+                    variant="text"
+                    color="info"
+                    size="small"
+                    density="comfortable"
+                    :aria-label="$t('play.hint') || 'Hint'"
+                  />
+                </template>
+                <span>{{ taskHint }}</span>
+              </VTooltip>
             </div>
           </div>
         </VCol>

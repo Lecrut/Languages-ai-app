@@ -32,6 +32,7 @@ const selectedTopic = ref<TaskTopicId>(DEFAULT_TASK_TOPIC)
 const selectedMode = ref<TaskLoadMode | null>(null)
 const { setPageTitle } = usePageHead()
 const isEmailVerified = computed(() => authStore.user?.emailVerified ?? false)
+const isTaskLoading = computed(() => isStartingSession.value || taskLoader.loading.value)
 
 onMounted(() => {
   setPageTitle(t('play.title'))
@@ -90,7 +91,7 @@ const startSessionWithMode = async (mode: TaskLoadMode) => {
     return
   }
 
-  if (isStartingSession.value) {
+  if (isTaskLoading.value) {
     return
   }
 
@@ -114,7 +115,6 @@ const startSessionWithMode = async (mode: TaskLoadMode) => {
       userId: currentUser.uid,
       aiPromptParams: {
         subject: languageLabelByCode[profile?.learningLanguage ?? 'en'] ?? 'English',
-        nativeLanguage: languageLabelByCode[profile?.appLanguage ?? 'pl'] ?? 'Polish',
         topic: selectedPromptTopic.value,
         level: profile?.level ?? DEFAULT_LEARNING_LEVEL,
       },
@@ -247,12 +247,18 @@ watch(
               :label="t('play.topicLabel')"
               prepend-inner-icon="mdi-shape-outline"
               variant="outlined"
-              :disabled="isStartingSession || taskLoader.loading.value"
+              :disabled="isTaskLoading"
             />
           </div>
 
           <div>
             <p class="text-body-medium font-weight-bold mb-4">{{ t('play.selectMode') || 'Choose a task set:' }}</p>
+            <VProgressLinear
+              v-if="isTaskLoading"
+              indeterminate
+              color="primary"
+              class="mb-4"
+            />
             <VRow>
               <VCol
                 v-for="option in taskLoadModeOptions"
@@ -264,18 +270,13 @@ watch(
                   :class="['h-100 cursor-pointer', selectedMode === option.mode ? 'border-primary border-2' : '']"
                   variant="outlined"
                   :color="selectedMode === option.mode ? 'primary-container' : ''"
+                  :disabled="isTaskLoading"
                   @click="startSessionWithMode(option.mode)"
                 >
                   <VCardText class="d-flex flex-column align-center text-center gap-2 pa-4">
                     <VIcon size="32" :icon="option.icon" />
                     <p class="text-body-large font-weight-bold">{{ option.label }}</p>
                     <p class="text-body-small text-medium-emphasis">{{ option.description }}</p>
-                    <VProgressCircular
-                      v-if="selectedMode === option.mode && (isStartingSession || taskLoader.loading.value)"
-                      indeterminate
-                      size="24"
-                      class="mt-2"
-                    />
                   </VCardText>
                 </VCard>
               </VCol>

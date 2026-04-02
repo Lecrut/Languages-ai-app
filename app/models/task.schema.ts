@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { DocumentData, DocumentReference } from 'firebase/firestore'
+import { LEARNING_LEVELS } from '../constants/learning-levels'
 import { TASK_TYPES } from './task.types'
 
 const referenceSchema = z.custom<DocumentReference<DocumentData>>(
@@ -10,7 +11,9 @@ const referenceSchema = z.custom<DocumentReference<DocumentData>>(
 const baseTaskSchema = z.object({
   reference: referenceSchema,
   subject: z.string().trim().min(2),
+  targetLanguage: z.string().trim().min(2),
   topic: z.string().trim().min(1),
+  level: z.enum(LEARNING_LEVELS),
   question: z.string().trim().min(1),
   correctAnswer: z.string().trim().min(1),
   hint: z.string().trim().nullable(),

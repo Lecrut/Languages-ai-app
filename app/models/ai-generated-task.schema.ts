@@ -1,10 +1,14 @@
 import { z } from 'zod'
 import { TASK_TYPES } from './task.types'
+import { LEARNING_LEVELS } from '../constants/learning-levels'
 
 const baseGeneratedTaskSchema = z.object({
+  targetLanguage: z.string().trim().min(2),
+  topic: z.string().trim().min(1),
+  level: z.enum(LEARNING_LEVELS),
   question: z.string().trim().min(1),
   correctAnswer: z.string().trim().min(1),
-  hint: z.string().trim().nullable(),
+  hint: z.string().trim().min(1),
 })
 
 const multipleChoiceGeneratedTaskSchema = baseGeneratedTaskSchema.extend({

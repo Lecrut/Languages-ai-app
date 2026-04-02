@@ -1,13 +1,15 @@
 export const usePageHead = () => {
   const appName = 'Languages AI'
 
+  const buildFullTitle = (title: string) => `${title} | ${appName}`
+
   const setPageTitle = (title: string) => {
     useHead({
-      title: `${title} | ${appName}`,
+      title,
       meta: [
         {
           property: 'og:title',
-          content: `${title} | ${appName}`,
+          content: buildFullTitle(title),
         },
       ],
     })
@@ -30,7 +32,7 @@ export const usePageHead = () => {
 
   const setPageMeta = (title: string, description: string) => {
     useHead({
-      title: `${title} | ${appName}`,
+      title,
       meta: [
         {
           name: 'description',
@@ -38,7 +40,7 @@ export const usePageHead = () => {
         },
         {
           property: 'og:title',
-          content: `${title} | ${appName}`,
+          content: buildFullTitle(title),
         },
         {
           property: 'og:description',
