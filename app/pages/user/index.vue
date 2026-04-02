@@ -11,6 +11,8 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
+const router = useRouter()
 const authStore = useAuthStore()
 const resultsStore = useResultsStore()
 const taskSessionStore = useTaskSessionStore()
@@ -22,6 +24,7 @@ const isEmailVerified = computed(() => authStore.user?.emailVerified ?? false)
 
 onMounted(() => {
   setPageTitle(t('play.title'))
+  taskSessionStore.initializeRecovery()
 })
 
 const languageLabelByCode: Record<string, string> = {
@@ -71,6 +74,12 @@ const submitAnswer = (answer: string) => {
 
 const goToNextTask = () => {
   taskSessionStore.goToNextTask()
+}
+
+const closeSession = async () => {
+  taskSessionStore.reset()
+  isResultSaved.value = false
+  await router.push(localePath('/user'))
 }
 
 const resendVerificationEmail = async () => {
@@ -144,7 +153,22 @@ watch(
       </VCard>
 
       <VCard v-else-if="!taskSessionStore.started" class="elevation-8">
-        <VCardText class="pt-8 text-center">
+        <template v-if="taskSessionStore.hasRecoverableSession">
+          <VCardText class="pt-8 text-center">
+            <VCardTitle class="text-h5 mb-4">{{ t('play.resumeTitle') }}</VCardTitle>
+            <p class="text-body-1 mb-6 text-medium-emphasis">{{ t('play.resumeDescription') }}</p>
+
+            <VBtn
+              color="primary"
+              size="large"
+              @click="taskSessionStore.resumeRecoverableSession()"
+            >
+              {{ t('play.resume') }}
+            </VBtn>
+          </VCardText>
+        </template>
+
+        <VCardText v-else class="pt-8 text-center">
           <VCardTitle class="text-h4 mb-4">{{ t('play.title') }}</VCardTitle>
           <p class="text-body1 mb-6 text-medium-emphasis">{{ t('play.description') }}</p>
 
@@ -173,6 +197,7 @@ watch(
         @submit-answer="submitAnswer"
         @next="goToNextTask"
         @restart="startSession"
+        @close="closeSession"
       />
     </VCol>
   </VRow>

@@ -2,6 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import type { TaskSessionTask } from '../stores/use-task-session-store'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   task: TaskSessionTask | null
   taskNumber: number
@@ -17,6 +19,7 @@ const emit = defineEmits<{
   submitAnswer: [answer: string]
   next: []
   restart: []
+  close: []
 }>()
 
 const selectedArrangeWords = ref<string[]>([])
@@ -25,9 +28,11 @@ const optionColors = ['primary', 'success', 'warning', 'info'] as const
 
 const hasTask = computed(() => Boolean(props.task))
 const isArrangeTask = computed(() => props.task?.type === 'arrange_words')
+const isFlashcardTask = computed(() => props.task?.type === 'flashcard')
 const canSubmitArrangeAnswer = computed(() => selectedArrangeWords.value.length > 0)
 const arrangedAnswer = computed(() => selectedArrangeWords.value.join(' '))
 const isAnswered = computed(() => props.currentAnswerCorrect !== null)
+const isFlashcardAnswerRevealed = ref(false)
 const scorePercentage = computed(() => {
   if (!props.totalTasks) {
     return 0
@@ -35,20 +40,40 @@ const scorePercentage = computed(() => {
 
   return Math.round((props.correctCount / props.totalTasks) * 100)
 })
-const selectedAnswerLabel = computed(() => props.currentAnswer ?? '')
+const selectedAnswerLabel = computed(() => {
+  if (props.task?.type !== 'flashcard') {
+    return props.currentAnswer ?? ''
+  }
+
+  if (props.currentAnswer === '__flashcard_known__') {
+    return t('play.flashcardKnown')
+  }
+
+  if (props.currentAnswer === '__flashcard_unknown__') {
+    return t('play.flashcardUnknown')
+  }
+
+  return props.currentAnswer ?? ''
+})
 const correctAnswerLabel = computed(() => props.task?.correctAnswer ?? '')
 const showSelectedAnswerTile = computed(() => {
   if (!isAnswered.value) {
     return false
   }
 
+  if (isFlashcardTask.value) {
+    return false
+  }
+
   return selectedAnswerLabel.value.trim().toLowerCase() !== correctAnswerLabel.value.trim().toLowerCase()
 })
+const showFlashcardEvaluationTile = computed(() => isFlashcardTask.value && isAnswered.value)
 
 watch(
   () => props.task?.id,
   () => {
     selectedArrangeWords.value = []
+    isFlashcardAnswerRevealed.value = false
   },
 )
 
@@ -91,12 +116,28 @@ const submitOptionAnswer = (option: string) => {
 
   emit('submitAnswer', option)
 }
+
+const revealFlashcardAnswer = () => {
+  if (isAnswered.value) {
+    return
+  }
+
+  isFlashcardAnswerRevealed.value = true
+}
+
+const submitFlashcardKnown = () => {
+  submitOptionAnswer('__flashcard_known__')
+}
+
+const submitFlashcardUnknown = () => {
+  submitOptionAnswer('__flashcard_unknown__')
+}
 </script>
 
 <template>
   <VCard class="mx-auto" max-width="1200">
     <VCardText class="pa-3 pa-sm-4 pa-md-6">
-      <VRow class="mb-3" align="center" justify="space-between" no-gutters>
+      <VRow v-if="!completed" class="mb-3" align="center" justify="space-between" no-gutters>
         <VCol cols="12" md="6" class="mb-2 mb-md-0">
           <VChip color="primary" variant="flat" size="large">
             {{ $t('play.taskProgress', { current: taskNumber, total: totalTasks }) }}
@@ -114,7 +155,7 @@ const submitOptionAnswer = (option: string) => {
 
       <VRow v-if="completed" class="justify-center">
         <VCol cols="12" md="8" lg="6">
-          <VCard variant="tonal" color="primary" class="mb-4">
+          <VCard variant="tonal" class="mb-4">
             <VCardTitle>{{ $t('play.summaryTitle') }}</VCardTitle>
             <VCardText class="d-flex flex-column align-center ga-4">
               <VProgressCircular
@@ -143,9 +184,9 @@ const submitOptionAnswer = (option: string) => {
             block
             color="primary"
             size="x-large"
-            @click="emit('restart')"
+            @click="emit('close')"
           >
-            {{ $t('play.restart') }}
+            {{ $t('play.close') }}
           </VBtn>
         </VCol>
       </VRow>
@@ -221,6 +262,41 @@ const submitOptionAnswer = (option: string) => {
               </div>
             </div>
 
+            <div v-else-if="isFlashcardTask && !isAnswered" class="d-flex flex-column ga-3">
+              <VBtn
+                v-if="!isFlashcardAnswerRevealed"
+                color="primary"
+                size="large"
+                @click="revealFlashcardAnswer"
+              >
+                {{ $t('play.flashcardRevealAnswer') }}
+              </VBtn>
+
+              <VCard v-else variant="tonal" color="primary">
+                <VCardText>
+                  <p class="text-caption mb-1">{{ $t('play.correctAnswerTile') }}</p>
+                  <p class="mb-0 text-h6">{{ correctAnswerLabel }}</p>
+                </VCardText>
+              </VCard>
+
+              <div v-if="isFlashcardAnswerRevealed" class="d-flex ga-2 flex-wrap">
+                <VBtn
+                  color="success"
+                  variant="flat"
+                  @click="submitFlashcardKnown"
+                >
+                  {{ $t('play.flashcardKnown') }}
+                </VBtn>
+                <VBtn
+                  color="error"
+                  variant="tonal"
+                  @click="submitFlashcardUnknown"
+                >
+                  {{ $t('play.flashcardUnknown') }}
+                </VBtn>
+              </div>
+            </div>
+
             <VRow v-else-if="!isAnswered" dense>
               <VCol
                 v-for="(option, optionIndex) in task?.options"
@@ -248,6 +324,20 @@ const submitOptionAnswer = (option: string) => {
                   <div>
                     <p class="text-caption mb-1">{{ $t('play.correctAnswerTile') }}</p>
                     <p class="mb-0 text-body-1">{{ correctAnswerLabel }}</p>
+                  </div>
+                </VCardText>
+              </VCard>
+
+              <VCard
+                v-if="showFlashcardEvaluationTile"
+                variant="flat"
+                :color="currentAnswerCorrect ? 'success' : 'error'"
+              >
+                <VCardText class="d-flex align-center ga-2">
+                  <VIcon :icon="currentAnswerCorrect ? 'mdi-thumb-up-outline' : 'mdi-help-circle-outline'" />
+                  <div>
+                    <p class="text-caption mb-1">{{ $t('play.flashcardEvaluationTile') }}</p>
+                    <p class="mb-0 text-body-1">{{ selectedAnswerLabel }}</p>
                   </div>
                 </VCardText>
               </VCard>

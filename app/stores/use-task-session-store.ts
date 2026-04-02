@@ -1,7 +1,8 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { TASKS_PER_SESSION_DEFAULT, clampTasksPerSession } from '../constants/task-session-settings'
+import { TASK_SESSION_STORAGE } from '../constants/task-session-storage'
 import type { AiTaskPromptParams } from '../constants/ai-task-prompts'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import { parseAiGeneratedTaskList } from '../models/ai-generated-task.schema'
@@ -19,11 +20,19 @@ interface TaskEvaluation {
   isCorrect: boolean
 }
 
+interface PersistedTaskSession {
+  version: number
+  tasks: TaskSessionTask[]
+  currentTaskIndex: number
+  evaluations: Record<string, TaskEvaluation>
+}
+
 interface GenerateTasksWithAiParams extends Omit<AiTaskPromptParams, 'tasksCount'> {
   tasksCount?: number
 }
 
 const normalizeAnswer = (value: string) => value.trim().toLowerCase()
+const FLASHCARD_KNOWN_ANSWER = '__flashcard_known__'
 
 export const useTaskSessionStore = defineStore('task-session', () => {
   const userProfileStore = useUserProfileStore()
@@ -33,6 +42,7 @@ export const useTaskSessionStore = defineStore('task-session', () => {
   const evaluations = ref<Record<string, TaskEvaluation>>({})
   const generating = ref(false)
   const generationError = ref<string | null>(null)
+  const recoverableSession = ref<PersistedTaskSession | null>(null)
 
   const totalTasks = computed(() => tasks.value.length)
   const currentTask = computed(() => tasks.value[currentTaskIndex.value] ?? null)
@@ -69,6 +79,81 @@ export const useTaskSessionStore = defineStore('task-session', () => {
     }]
   }))
 
+  const hasRecoverableSession = computed(() => Boolean(recoverableSession.value))
+
+  const saveSessionSnapshot = () => {
+    if (!import.meta.client) {
+      return
+    }
+
+    const isRecoverableInProgress = started.value
+      && tasks.value.length > 0
+      && currentTaskIndex.value < tasks.value.length
+
+    if (!isRecoverableInProgress) {
+      localStorage.removeItem(TASK_SESSION_STORAGE.key)
+      return
+    }
+
+    const payload: PersistedTaskSession = {
+      version: TASK_SESSION_STORAGE.version,
+      tasks: tasks.value,
+      currentTaskIndex: currentTaskIndex.value,
+      evaluations: evaluations.value,
+    }
+
+    localStorage.setItem(TASK_SESSION_STORAGE.key, JSON.stringify(payload))
+  }
+
+  const initializeRecovery = () => {
+    if (!import.meta.client) {
+      return
+    }
+
+    const rawValue = localStorage.getItem(TASK_SESSION_STORAGE.key)
+    if (!rawValue) {
+      return
+    }
+
+    try {
+      const parsed = JSON.parse(rawValue) as PersistedTaskSession
+      const hasValidPayload = parsed.version === TASK_SESSION_STORAGE.version
+        && Array.isArray(parsed.tasks)
+        && parsed.tasks.length > 0
+        && typeof parsed.currentTaskIndex === 'number'
+        && parsed.currentTaskIndex >= 0
+        && parsed.currentTaskIndex < parsed.tasks.length
+        && typeof parsed.evaluations === 'object'
+        && parsed.evaluations !== null
+
+      if (!hasValidPayload) {
+        localStorage.removeItem(TASK_SESSION_STORAGE.key)
+        return
+      }
+
+      recoverableSession.value = parsed
+    }
+    catch {
+      localStorage.removeItem(TASK_SESSION_STORAGE.key)
+    }
+  }
+
+  const resumeRecoverableSession = () => {
+    const pendingSession = recoverableSession.value
+    if (!pendingSession) {
+      return false
+    }
+
+    tasks.value = pendingSession.tasks
+    currentTaskIndex.value = pendingSession.currentTaskIndex
+    evaluations.value = pendingSession.evaluations
+    started.value = true
+    generationError.value = null
+    recoverableSession.value = null
+    saveSessionSnapshot()
+    return true
+  }
+
   const startSession = () => {
     if (!tasks.value.length) {
       return
@@ -87,6 +172,11 @@ export const useTaskSessionStore = defineStore('task-session', () => {
   const generateTasksWithAi = async (params: GenerateTasksWithAiParams) => {
     const { db, generateTasksJsonWithAi } = useFirebase()
     const requestedTasksCount = clampTasksPerSession(params.tasksCount ?? sessionTasksCount.value)
+
+    if (hasRecoverableSession.value) {
+      generationError.value = 'Resume your previous game before generating a new one.'
+      throw new Error(generationError.value)
+    }
 
     generating.value = true
     generationError.value = null
@@ -129,6 +219,7 @@ export const useTaskSessionStore = defineStore('task-session', () => {
       tasks.value = savedTasks
       currentTaskIndex.value = 0
       evaluations.value = {}
+      recoverableSession.value = null
 
       return savedTasks
     }
@@ -152,7 +243,9 @@ export const useTaskSessionStore = defineStore('task-session', () => {
       return existingEvaluation
     }
 
-    const isCorrect = normalizeAnswer(answer) === normalizeAnswer(task.correctAnswer)
+    const isCorrect = task.type === 'flashcard'
+      ? answer === FLASHCARD_KNOWN_ANSWER
+      : normalizeAnswer(answer) === normalizeAnswer(task.correctAnswer)
     const evaluation: TaskEvaluation = {
       userAnswer: answer,
       isCorrect,
@@ -172,10 +265,21 @@ export const useTaskSessionStore = defineStore('task-session', () => {
 
   const reset = () => {
     started.value = false
+    tasks.value = []
     currentTaskIndex.value = 0
     evaluations.value = {}
     generationError.value = null
+    recoverableSession.value = null
+    saveSessionSnapshot()
   }
+
+  watch(
+    [tasks, started, currentTaskIndex, evaluations],
+    () => {
+      saveSessionSnapshot()
+    },
+    { deep: true },
+  )
 
   return {
     tasks,
@@ -191,8 +295,11 @@ export const useTaskSessionStore = defineStore('task-session', () => {
     incorrectCount,
     currentEvaluation,
     taskResults,
+    hasRecoverableSession,
     startSession,
     generateTasksWithAi,
+    initializeRecovery,
+    resumeRecoverableSession,
     submitCurrentAnswer,
     goToNextTask,
     reset,

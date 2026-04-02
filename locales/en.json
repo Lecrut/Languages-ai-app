@@ -83,6 +83,9 @@
   "play": {
     "title": "Play",
     "description": "A new set of tasks will be generated using AI based on your level.",
+    "resumeTitle": "Resume game",
+    "resumeDescription": "Your previous session was saved. Resume it before generating a new one.",
+    "resume": "Resume game",
     "play": "Play",
     "start": "Start",
     "taskProgress": "Task {current} of {total}",
@@ -95,9 +98,14 @@
     "answerIncorrect": "That answer is not correct.",
     "sessionCompleted": "You finished the task set.",
     "restart": "Play again",
+    "close": "Close",
     "summaryTitle": "Summary",
     "correctAnswerTile": "Correct answer",
-    "selectedAnswerTile": "Your answer"
+    "selectedAnswerTile": "Your answer",
+    "flashcardRevealAnswer": "Show answer",
+    "flashcardKnown": "I know this",
+    "flashcardUnknown": "I don't know this",
+    "flashcardEvaluationTile": "Your assessment"
   },
   "results": {
     "title": "Results",

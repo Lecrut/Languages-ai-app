@@ -83,6 +83,9 @@
   "play": {
     "title": "Graj",
     "description": "Nowy zestaw zadań zostanie wygenerowany za pośrednictwem AI na podstawie Twojego poziomu.",
+    "resumeTitle": "Wznów grę",
+    "resumeDescription": "Twoja poprzednia sesja została zapisana. Wznów ją, zanim wygenerujesz nową.",
+    "resume": "Wznów grę",
     "play": "Graj",
     "start": "Start",
     "taskProgress": "Zadanie {current} z {total}",
@@ -95,9 +98,14 @@
     "answerIncorrect": "To nie ta odpowiedź.",
     "sessionCompleted": "Koniec zestawu zadań.",
     "restart": "Zagraj jeszcze raz",
+    "close": "Zamknij",
     "summaryTitle": "Podsumowanie",
     "correctAnswerTile": "Poprawna odpowiedź",
-    "selectedAnswerTile": "Twoja odpowiedź"
+    "selectedAnswerTile": "Twoja odpowiedź",
+    "flashcardRevealAnswer": "Pokaż odpowiedź",
+    "flashcardKnown": "Znam to",
+    "flashcardUnknown": "Nie znam tego",
+    "flashcardEvaluationTile": "Twoja ocena"
   },
   "results": {
     "title": "Wyniki",
