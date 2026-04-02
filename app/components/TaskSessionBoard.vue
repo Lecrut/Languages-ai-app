@@ -24,7 +24,6 @@ const emit = defineEmits<{
 
 const selectedArrangeWords = ref<string[]>([])
 const isSpeaking = ref(false)
-const isPaused = ref(false)
 const { mdAndUp } = useDisplay()
 
 const optionColors = ['primary', 'success', 'warning', 'info'] as const
@@ -104,14 +103,7 @@ const speakAnswer = (text: string) => {
     return
   }
 
-  if (isPaused.value) {
-    window.speechSynthesis.resume()
-    isPaused.value = false
-    return
-  }
-
   window.speechSynthesis.cancel()
-  isPaused.value = false
 
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = 'en-US'
@@ -123,12 +115,10 @@ const speakAnswer = (text: string) => {
 
   utterance.onend = () => {
     isSpeaking.value = false
-    isPaused.value = false
   }
 
   utterance.onerror = () => {
     isSpeaking.value = false
-    isPaused.value = false
   }
 
   window.speechSynthesis.speak(utterance)
@@ -138,13 +128,17 @@ const stopSpeaking = () => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel()
     isSpeaking.value = false
-    isPaused.value = false
   }
 }
 
 const speakQuestionWithAnswer = (question: string, answer: string) => {
-  const questionWithAnswer = question.replace(/_+/, answer)
-  speakAnswer(questionWithAnswer)
+  if (question.includes('_')) {
+    const questionWithAnswer = question.replace(/_+/, answer)
+    speakAnswer(questionWithAnswer)
+  }
+  else {
+    speakAnswer(answer)
+  }
 }
 </script>
 
@@ -308,21 +302,22 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
                   </div>
                   <div class="d-flex ga-1">
                     <VBtn
-                      icon
-                      variant="text"
-                      size="small"
-                      @click="speakQuestionWithAnswer(task?.question || '', correctAnswerLabel)"
-                    >
-                      <VIcon :icon="!isSpeaking ? 'mdi-play' : isPaused ? 'mdi-play' : 'mdi-pause'" />
-                    </VBtn>
-                    <VBtn
-                      v-if="isSpeaking || isPaused"
+                      v-if="isSpeaking"
                       icon
                       variant="text"
                       size="small"
                       @click="stopSpeaking"
                     >
                       <VIcon icon="mdi-stop" />
+                    </VBtn>
+                    <VBtn
+                      v-else
+                      icon
+                      variant="text"
+                      size="small"
+                      @click="speakQuestionWithAnswer(task?.question || '', correctAnswerLabel)"
+                    >
+                      <VIcon icon="mdi-play" />
                     </VBtn>
                   </div>
                 </VCardText>
