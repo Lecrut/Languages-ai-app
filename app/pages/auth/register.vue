@@ -60,7 +60,8 @@ const handleRegister = async () => {
 
   try {
     await authStore.register(email.value, password.value)
-    await router.push(localePath('/user'))
+    snackbarStore.showSuccess(t('register.success') || 'Registration successful. Please check your email to verify your account.')
+    await router.push(localePath('/auth/login'))
   }
   catch (caughtError) {
     snackbarStore.showError(t(getFirebaseAuthErrorKey(caughtError)))

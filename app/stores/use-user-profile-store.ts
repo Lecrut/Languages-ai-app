@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import { TASKS_PER_SESSION_DEFAULT, clampTasksPerSession } from '../constants/task-session-settings'
+import { getDefaultNicknameFromEmail } from '../helpers/auth-helpers'
 import type { AuthUser } from '../models/auth-user'
 import type { UserProfile, UserProfileUpdatePayload } from '../models/user-profile'
 import { useFirebase } from '../composables/useFirebase'
@@ -41,14 +42,6 @@ const mapFirestoreProfile = (profile: FirestoreUserProfile): UserProfile => {
   }
 }
 
-const getDefaultNick = (authUser: AuthUser) => {
-  if (!authUser.email) {
-    return 'user'
-  }
-
-  return authUser.email.split('@')[0] || 'user'
-}
-
 export const useUserProfileStore = defineStore('user-profile', () => {
   const profile = ref<UserProfile | null>(null)
   const sharedStore = useSharedStore()
@@ -56,6 +49,10 @@ export const useUserProfileStore = defineStore('user-profile', () => {
   const saving = computed(() => sharedStore.loading)
   const error = computed(() => sharedStore.error)
   const hasProfile = computed(() => Boolean(profile.value))
+
+  const setProfileFromFirestore = (userProfile: FirestoreUserProfile) => {
+    profile.value = mapFirestoreProfile(userProfile)
+  }
 
   const getUserDocRef = (uid: string) => {
     const { db } = useFirebase()
@@ -74,7 +71,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
       if (!snapshot.exists()) {
         await setDoc(userDocRef, {
           uid: authUser.uid,
-          nick: getDefaultNick(authUser),
+          nick: getDefaultNicknameFromEmail(authUser.email),
           appLanguage: 'pl',
           learningLanguage: 'en',
           tasksPerSession: TASKS_PER_SESSION_DEFAULT,
@@ -86,7 +83,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
       const refreshedSnapshot = await getDoc(userDocRef)
 
       if (refreshedSnapshot.exists()) {
-        profile.value = mapFirestoreProfile(refreshedSnapshot.data() as FirestoreUserProfile)
+        setProfileFromFirestore(refreshedSnapshot.data() as FirestoreUserProfile)
       }
     }
     catch (caughtError) {
@@ -110,14 +107,17 @@ export const useUserProfileStore = defineStore('user-profile', () => {
         appLanguage: payload.appLanguage,
         learningLanguage: payload.learningLanguage,
         tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
-        email: payload.email,
       })
 
-      await loadOrCreateProfile({
-        uid,
-        email: payload.email,
-        displayName: null,
-      })
+      if (profile.value) {
+        profile.value = {
+          ...profile.value,
+          nick: payload.nick,
+          appLanguage: payload.appLanguage,
+          learningLanguage: payload.learningLanguage,
+          tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
+        }
+      }
     }
     catch (caughtError) {
       sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Failed to update profile')

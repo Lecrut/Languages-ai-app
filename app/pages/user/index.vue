@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useResultsStore } from '../../stores/use-results-store'
+import { useSnackbarStore } from '../../stores/use-snackbar-store'
 import { useTaskSessionStore } from '../../stores/use-task-session-store'
 import { useUserProfileStore } from '../../stores/use-user-profile-store'
 
@@ -17,6 +18,7 @@ const userProfileStore = useUserProfileStore()
 const isResultSaved = ref(false)
 const isStartingSession = ref(false)
 const { setPageTitle } = usePageHead()
+const isEmailVerified = computed(() => authStore.user?.emailVerified ?? false)
 
 onMounted(() => {
   setPageTitle(t('play.title'))
@@ -32,6 +34,10 @@ const languageLabelByCode: Record<string, string> = {
 }
 
 const startSession = async () => {
+  if (!isEmailVerified.value) {
+    return
+  }
+
   if (isStartingSession.value) {
     return
   }
@@ -51,6 +57,9 @@ const startSession = async () => {
 
     taskSessionStore.startSession()
   }
+  catch {
+    // Errors are handled by taskSessionStore.generationError watcher/snackbar.
+  }
   finally {
     isStartingSession.value = false
   }
@@ -63,6 +72,27 @@ const submitAnswer = (answer: string) => {
 const goToNextTask = () => {
   taskSessionStore.goToNextTask()
 }
+
+const resendVerificationEmail = async () => {
+  const snackbarStore = useSnackbarStore()
+  try {
+    await authStore.resendVerificationEmail()
+    snackbarStore.showSuccess(t('auth.verificationEmailSent') || 'Verification email sent. Please check your inbox.')
+  }
+  catch {
+    // Error is handled in auth store
+  }
+}
+
+watch(
+  () => taskSessionStore.generationError,
+  (error) => {
+    if (error) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showError(error)
+    }
+  },
+)
 
 watch(
   () => taskSessionStore.completed,
@@ -88,21 +118,35 @@ watch(
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12" md="10" lg="8">
-      <VCard v-if="!taskSessionStore.started">
-        <VCardTitle class="text-h5">{{ t('play.title') }}</VCardTitle>
-        <VCardText>
-          <p class="mb-4">{{ t('play.description') }}</p>
+  <VRow class="justify-center">
+    <VCol cols="12" sm="11" md="10" lg="9" xl="8">
+      <VCard v-if="!isEmailVerified" class="elevation-8">
+        <VCardText class="pt-8 text-center">
+          <VCardTitle class="text-h5 mb-4">{{ t('auth.verifyEmailTitle') || 'Verify your email address' }}</VCardTitle>
 
           <VAlert
-            v-if="taskSessionStore.generationError"
-            type="error"
+            type="warning"
             variant="tonal"
-            class="mb-4"
+            class="mb-6"
           >
-            {{ taskSessionStore.generationError }}
+            {{ t('auth.verifyEmailDescription') || 'Please verify your email to unlock all features.' }}
           </VAlert>
+
+          <VBtn
+            color="warning"
+            variant="flat"
+            :loading="authStore.loading"
+            @click="resendVerificationEmail"
+          >
+            {{ t('auth.resendVerification') || 'Resend' }}
+          </VBtn>
+        </VCardText>
+      </VCard>
+
+      <VCard v-else-if="!taskSessionStore.started" class="elevation-8">
+        <VCardText class="pt-8 text-center">
+          <VCardTitle class="text-h4 mb-4">{{ t('play.title') }}</VCardTitle>
+          <p class="text-body1 mb-6 text-medium-emphasis">{{ t('play.description') }}</p>
 
           <VBtn
             color="primary"
@@ -111,13 +155,13 @@ watch(
             :disabled="isStartingSession || taskSessionStore.generating"
             @click="startSession"
           >
-            {{ t('play.start') }}
+            {{ t('play.play') || t('play.start') }}
           </VBtn>
         </VCardText>
       </VCard>
 
       <TaskSessionBoard
-        v-else
+        v-else-if="isEmailVerified"
         :task="taskSessionStore.currentTask"
         :task-number="taskSessionStore.currentTaskNumber"
         :total-tasks="taskSessionStore.totalTasks"

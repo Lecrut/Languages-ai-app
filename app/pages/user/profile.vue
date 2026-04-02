@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useUserProfileStore } from '../../stores/use-user-profile-store'
 import {
@@ -12,81 +13,118 @@ definePageMeta({
   middleware: 'auth',
 })
 
-const { t } = useI18n()
+const { t, setLocale, locale } = useI18n()
 const authStore = useAuthStore()
 const userProfileStore = useUserProfileStore()
-const router = useRouter()
 const { setPageTitle } = usePageHead()
+type AppLocale = 'pl' | 'en'
 
-onMounted(async () => {
+onMounted(() => {
   setPageTitle(t('profile.title'))
-
-  if (!authStore.user) {
-    return
-  }
-
-  await userProfileStore.loadOrCreateProfile(authStore.user)
-  fillFormFromProfile()
 })
 
 const nick = ref('')
-const appLanguage = ref('pl')
+const appLanguage = ref<AppLocale>('pl')
 const learningLanguage = ref('en')
 const tasksPerSession = ref(TASKS_PER_SESSION_DEFAULT)
-const profileEmail = ref('')
 const saveSuccess = ref(false)
+const isEditing = ref(false)
 
-const appLanguageOptions = [
-  { title: 'Polski (PL)', value: 'pl' },
-  { title: 'English (EN)', value: 'en' },
-]
+const appLanguageOptions = computed(() => [
+  { title: t('profile.languagePolishWithCode'), value: 'pl' as const },
+  { title: t('profile.languageEnglishWithCode'), value: 'en' as const },
+])
 
-const learningLanguageOptions = [
-  { title: 'English', value: 'en' },
-  { title: 'Polski', value: 'pl' },
-  { title: 'Deutsch', value: 'de' },
-  { title: 'Espanol', value: 'es' },
-  { title: 'Francais', value: 'fr' },
-  { title: 'Italiano', value: 'it' },
-]
+const learningLanguageOptions = computed(() => [
+  { title: t('profile.languageEnglish'), value: 'en' },
+  { title: t('profile.languageGerman'), value: 'de' },
+  { title: t('profile.languageSpanish'), value: 'es' },
+  { title: t('profile.languageFrench'), value: 'fr' },
+  { title: t('profile.languageItalian'), value: 'it' },
+])
+
+const profile = computed(() => userProfileStore.profile)
 
 const createdAtFormatted = computed(() => {
-  if (!userProfileStore.profile?.createdAt) {
+  if (!profile.value?.createdAt) {
     return '-'
   }
 
-  return new Date(userProfileStore.profile.createdAt).toLocaleString()
+  return new Date(profile.value.createdAt).toLocaleString()
 })
 
-const fillFormFromProfile = () => {
-  if (!userProfileStore.profile) {
+const syncFormFromProfile = () => {
+  if (!profile.value) {
     return
   }
 
-  nick.value = userProfileStore.profile.nick
-  appLanguage.value = userProfileStore.profile.appLanguage
-  learningLanguage.value = userProfileStore.profile.learningLanguage
-  tasksPerSession.value = clampTasksPerSession(userProfileStore.profile.tasksPerSession)
-  profileEmail.value = userProfileStore.profile.email
+  nick.value = profile.value.nick
+  appLanguage.value = profile.value.appLanguage === 'en' ? 'en' : 'pl'
+  learningLanguage.value = profile.value.learningLanguage
+  tasksPerSession.value = clampTasksPerSession(profile.value.tasksPerSession)
 }
 
-const canSaveProfile = computed(() => Boolean(
-  nick.value
-  && profileEmail.value
-  && tasksPerSession.value >= TASKS_PER_SESSION_MIN
-  && tasksPerSession.value <= TASKS_PER_SESSION_MAX,
-))
-
-onMounted(async () => {
-  setPageTitle(t('profile.title'))
-
-  if (!authStore.user) {
+const startEditing = () => {
+  if (!profile.value) {
     return
   }
 
-  await userProfileStore.loadOrCreateProfile(authStore.user)
-  fillFormFromProfile()
+  userProfileStore.clearProfileError()
+  saveSuccess.value = false
+  isEditing.value = true
+}
+
+const cancelEditing = async () => {
+  if (!profile.value) {
+    return
+  }
+
+  syncFormFromProfile()
+  saveSuccess.value = false
+  userProfileStore.clearProfileError()
+  isEditing.value = false
+
+  const nextLocale: AppLocale = profile.value.appLanguage === 'en' ? 'en' : 'pl'
+
+  if (locale.value !== nextLocale) {
+    await setLocale(nextLocale)
+  }
+}
+
+const isFormDirty = computed(() => {
+  if (!profile.value) {
+    return false
+  }
+
+  return nick.value !== profile.value.nick
+    || appLanguage.value !== profile.value.appLanguage
+    || learningLanguage.value !== profile.value.learningLanguage
+    || clampTasksPerSession(tasksPerSession.value) !== clampTasksPerSession(profile.value.tasksPerSession)
 })
+
+watch(
+  profile,
+  () => {
+    syncFormFromProfile()
+  },
+  { immediate: true },
+)
+
+watch(isFormDirty, (isDirty) => {
+  if (isDirty) {
+    saveSuccess.value = false
+  }
+})
+
+const isProfileReady = computed(() => Boolean(profile.value))
+
+const canSaveProfile = computed(() => (
+  isProfileReady.value
+  && isFormDirty.value
+  && Boolean(nick.value)
+  && tasksPerSession.value >= TASKS_PER_SESSION_MIN
+  && tasksPerSession.value <= TASKS_PER_SESSION_MAX
+))
 
 const handleSaveProfile = async () => {
   if (!authStore.user) {
@@ -101,141 +139,156 @@ const handleSaveProfile = async () => {
       appLanguage: appLanguage.value,
       learningLanguage: learningLanguage.value,
       tasksPerSession: clampTasksPerSession(tasksPerSession.value),
-      email: profileEmail.value,
     })
 
+    if (locale.value !== appLanguage.value) {
+      await setLocale(appLanguage.value)
+    }
+
     saveSuccess.value = true
+    isEditing.value = false
   }
   catch {
     // Error message is handled in the profile store.
   }
 }
-
-const handleLogout = async () => {
-  try {
-    await authStore.logout()
-    await router.push('/auth/login')
-  }
-  catch {
-    // Error message is handled in the store.
-  }
-}
 </script>
 
 <template>
-  <VRow>
+  <VRow justify="center">
     <VCol cols="12" md="10" lg="8">
-      <VCard>
-        <VCardTitle class="text-h5">{{ t('profile.title') }}</VCardTitle>
-        <VCardText>
-          <div class="mb-4">{{ t('profile.description') }}</div>
-
-          <VAlert
-            v-if="userProfileStore.error"
-            type="error"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ userProfileStore.error }}
-          </VAlert>
-
-          <VAlert
-            v-if="saveSuccess"
-            type="success"
-            variant="tonal"
-            class="mb-3"
-          >
-            {{ t('profile.saveSuccess') }}
-          </VAlert>
-
-          <VRow>
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="nick"
-                :label="t('profile.nick')"
-                prepend-inner-icon="mdi-account"
-                :disabled="userProfileStore.loading"
-              />
-            </VCol>
-
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="profileEmail"
-                :label="t('profile.email')"
-                prepend-inner-icon="mdi-email-outline"
-                type="email"
-                :disabled="userProfileStore.loading"
-              />
-            </VCol>
-
-            <VCol cols="12" md="6">
-              <VSelect
-                v-model="appLanguage"
-                :items="appLanguageOptions"
-                item-title="title"
-                item-value="value"
-                :label="t('profile.appLanguage')"
-                prepend-inner-icon="mdi-translate"
-                :disabled="userProfileStore.loading"
-              />
-            </VCol>
-
-            <VCol cols="12" md="6">
-              <VSelect
-                v-model="learningLanguage"
-                :items="learningLanguageOptions"
-                item-title="title"
-                item-value="value"
-                :label="t('profile.learningLanguage')"
-                prepend-inner-icon="mdi-book-open-page-variant"
-                :disabled="userProfileStore.loading"
-              />
-            </VCol>
-
-            <VCol cols="12">
-              <VSlider
-                v-model="tasksPerSession"
-                :label="t('profile.tasksPerSession')"
-                :min="TASKS_PER_SESSION_MIN"
-                :max="TASKS_PER_SESSION_MAX"
-                :step="1"
-                :thumb-label="true"
-                color="primary"
-                :disabled="userProfileStore.loading"
-                class="mt-2"
-              />
-              <div class="text-caption text-medium-emphasis">
-                {{ t('profile.tasksPerSessionHint', { min: TASKS_PER_SESSION_MIN, max: TASKS_PER_SESSION_MAX }) }}
+      <VRow>
+        <VCol cols="12" md="5">
+          <VCard class="h-100">
+            <VCardTitle class="text-h6 my-3">{{ t('profile.accountTitle') }}</VCardTitle>
+            <VCardText class="d-flex flex-column ga-3">
+              <div class="text-body-2">
+                {{ t('profile.email') }}: {{ authStore.user?.email ?? profile?.email ?? '-' }}
               </div>
-            </VCol>
-          </VRow>
+              <div class="text-body-2">
+                {{ t('profile.createdAt') }}: {{ createdAtFormatted }}
+              </div>
+            </VCardText>
+          </VCard>
+        </VCol>
 
-          <VDivider class="my-4" />
+        <VCol cols="12" md="7" class="d-flex justify-center">
+          <VCard class="w-100 mx-auto pb-6 pb-md-8">
+            <VCardTitle class="text-h5 text-center my-3">{{ t('profile.title') }}</VCardTitle>
+            <VCardText class="px-6">
+              <VAlert
+                v-if="userProfileStore.error"
+                type="error"
+                variant="tonal"
+                class="mb-3"
+              >
+                {{ userProfileStore.error }}
+              </VAlert>
 
-          <div class="text-body-2 mb-1">{{ t('profile.uid') }}: {{ authStore.user?.uid ?? '-' }}</div>
-          <div class="text-body-2">{{ t('profile.createdAt') }}: {{ createdAtFormatted }}</div>
-        </VCardText>
-        <VCardActions>
-          <VBtn
-            color="primary"
-            :loading="userProfileStore.saving || userProfileStore.loading"
-            :disabled="!canSaveProfile"
-            @click="handleSaveProfile"
-          >
-            {{ t('profile.save') }}
-          </VBtn>
+              <VAlert
+                v-if="saveSuccess"
+                type="success"
+                variant="tonal"
+                class="mb-3"
+              >
+                {{ t('profile.saveSuccess') }}
+              </VAlert>
 
-          <VBtn
-            color="secondary"
-            variant="outlined"
-            :loading="authStore.loading"
-            :disabled="!authStore.isAuthenticated"
-            @click="handleLogout"
-          >
-            {{ t('profile.logout') }}
-          </VBtn>
-        </VCardActions>
-      </VCard>
+              <VRow>
+                <VCol cols="12">
+                  <VTextField
+                    v-model="nick"
+                    :label="t('profile.nick')"
+                    prepend-inner-icon="mdi-account"
+                    variant="outlined"
+                    class="mb-3"
+                    :readonly="!isEditing || userProfileStore.loading"
+                  />
+                </VCol>
+
+                <VCol cols="12">
+                  <VSelect
+                    v-model="appLanguage"
+                    :items="appLanguageOptions"
+                    item-title="title"
+                    item-value="value"
+                    :label="t('profile.appLanguage')"
+                    prepend-inner-icon="mdi-translate"
+                    variant="outlined"
+                    class="mb-3"
+                    :disabled="!isEditing || userProfileStore.loading"
+                  />
+                </VCol>
+
+                <VCol cols="12">
+                  <VSelect
+                    v-model="learningLanguage"
+                    :items="learningLanguageOptions"
+                    item-title="title"
+                    item-value="value"
+                    :label="t('profile.learningLanguage')"
+                    prepend-inner-icon="mdi-book-open-page-variant"
+                    variant="outlined"
+                    class="mb-3"
+                    :disabled="!isEditing || userProfileStore.loading"
+                  />
+                </VCol>
+
+                <VCol cols="12">
+                  <VSlider
+                    v-model="tasksPerSession"
+                    :label="t('profile.tasksPerSession')"
+                    :min="TASKS_PER_SESSION_MIN"
+                    :max="TASKS_PER_SESSION_MAX"
+                    :step="1"
+                    :thumb-label="true"
+                    color="primary"
+                    :disabled="!isEditing || userProfileStore.loading"
+                    class="mt-2"
+                  />
+                  <div class="text-caption text-medium-emphasis">
+                    {{ t('profile.tasksPerSessionHint', { min: TASKS_PER_SESSION_MIN, max: TASKS_PER_SESSION_MAX }) }}
+                  </div>
+                </VCol>
+              </VRow>
+            </VCardText>
+            <VCardActions class="justify-center pt-0 pb-4 pb-md-6 d-flex flex-column align-center ga-2">
+              <template v-if="isEditing">
+                <VBtn
+                  color="primary"
+                  size="large"
+                  class="px-10"
+                  :loading="userProfileStore.saving || userProfileStore.loading"
+                  :disabled="!canSaveProfile"
+                  @click="handleSaveProfile"
+                >
+                  {{ t('profile.save') }}
+                </VBtn>
+
+                <VBtn
+                  variant="text"
+                  color="secondary"
+                  :disabled="userProfileStore.saving || userProfileStore.loading"
+                  @click="cancelEditing"
+                >
+                  {{ t('profile.cancel') }}
+                </VBtn>
+              </template>
+
+              <VBtn
+                v-else
+                color="primary"
+                size="large"
+                class="px-10"
+                :disabled="!profile || userProfileStore.loading"
+                @click="startEditing"
+              >
+                {{ t('profile.edit') }}
+              </VBtn>
+            </VCardActions>
+          </VCard>
+        </VCol>
+      </VRow>
     </VCol>
   </VRow>
 </template>

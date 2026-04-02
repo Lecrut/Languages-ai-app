@@ -23,13 +23,13 @@ export default defineNuxtConfig({
   plugins: [
     '~~/plugins/vuetify.ts',
     '~~/plugins/auth-init.client.ts',
+    '~~/plugins/pwa-dev-cleanup.client.ts',
   ],
 
   modules: [
     '@nuxt/eslint',
-    '@vite-pwa/nuxt',
     '@nuxtjs/i18n',
-    ...(isDev ? [] : ['@nuxtjs/html-validator']),
+    ...(isDev ? [] : ['@vite-pwa/nuxt', '@nuxtjs/html-validator']),
     '@nuxtjs/google-fonts',
     '@nuxt/scripts',
     '@nuxt/image',

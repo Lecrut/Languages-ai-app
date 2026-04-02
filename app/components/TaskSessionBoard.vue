@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { type TaskSessionTask } from '../stores/use-task-session-store'
+import type { TaskSessionTask } from '../stores/use-task-session-store'
 
 const props = defineProps<{
   task: TaskSessionTask | null
@@ -94,8 +94,8 @@ const submitOptionAnswer = (option: string) => {
 </script>
 
 <template>
-  <VCard class="mx-auto" max-width="1100">
-    <VCardText class="pa-4 pa-md-6">
+  <VCard class="mx-auto" max-width="1200">
+    <VCardText class="pa-3 pa-sm-4 pa-md-6">
       <VRow class="mb-3" align="center" justify="space-between" no-gutters>
         <VCol cols="12" md="6" class="mb-2 mb-md-0">
           <VChip color="primary" variant="flat" size="large">
@@ -150,29 +150,24 @@ const submitOptionAnswer = (option: string) => {
         </VCol>
       </VRow>
 
-      <VRow v-else-if="hasTask" class="ga-0">
-        <VCol cols="12" md="6">
-          <VSheet
-            class="pa-4 d-flex flex-column justify-center rounded-lg"
-            color="surface-variant"
-            height="42vh"
-          >
-            <p class="text-overline text-medium-emphasis mb-2">
+      <VRow v-else-if="hasTask">
+        <VCol cols="12">
+          <div class="px-1 px-md-2 pb-2 pb-md-4">
+            <p class="text-caption text-medium-emphasis mb-2">
               {{ task?.topic }}
             </p>
-            <p class="text-h6 text-md-h5 mb-0">
+            <p class="text-h6 text-sm-h5 text-md-h3 font-weight-bold mb-0">
               {{ task?.question }}
             </p>
-          </VSheet>
+          </div>
         </VCol>
 
-        <VCol cols="12" md="6">
+        <VCol cols="12">
           <VSheet
-            class="pa-4 rounded-lg d-flex flex-column justify-space-between"
+            class="pa-3 pa-sm-4 pa-md-6 rounded-lg"
             color="surface"
-            height="42vh"
           >
-            <div v-if="isArrangeTask && !isAnswered" class="d-flex flex-column ga-3">
+            <div v-if="isArrangeTask && !isAnswered" class="d-flex flex-column ga-4">
               <div class="d-flex ga-2 flex-wrap min-h-25">
                 <VChip
                   v-for="(word, index) in selectedArrangeWords"
@@ -190,12 +185,12 @@ const submitOptionAnswer = (option: string) => {
                 <VCol
                   v-for="(option, optionIndex) in task?.options"
                   :key="`${option}-${optionIndex}`"
-                  cols="6"
-                  md="3"
+                  cols="12"
+                  sm="6"
                 >
                   <VBtn
                     block
-                    class="text-none"
+                    class="text-none text-wrap py-3"
                     :color="optionColors[optionIndex % optionColors.length]"
                     variant="flat"
                     :disabled="isAnswered"
@@ -206,7 +201,7 @@ const submitOptionAnswer = (option: string) => {
                 </VCol>
               </VRow>
 
-              <div class="d-flex ga-2">
+              <div class="d-flex ga-2 flex-wrap">
                 <VBtn
                   color="primary"
                   variant="flat"
@@ -230,13 +225,12 @@ const submitOptionAnswer = (option: string) => {
               <VCol
                 v-for="(option, optionIndex) in task?.options"
                 :key="`${option}-${optionIndex}`"
-                cols="6"
-                md="3"
+                cols="12"
+                sm="6"
               >
                 <VBtn
                   block
-                  height="72"
-                  class="text-none"
+                  class="text-none text-wrap py-3"
                   :color="optionColors[optionIndex % optionColors.length]"
                   variant="flat"
                   :disabled="isAnswered"
@@ -247,7 +241,7 @@ const submitOptionAnswer = (option: string) => {
               </VCol>
             </VRow>
 
-            <div v-if="isAnswered" class="mt-3 d-flex flex-column ga-3">
+            <div v-if="isAnswered" class="d-flex flex-column ga-3">
               <VCard variant="flat" color="success">
                 <VCardText class="d-flex align-center ga-2">
                   <VIcon icon="mdi-check" />

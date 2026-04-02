@@ -13,5 +13,4 @@ export interface UserProfileUpdatePayload {
   appLanguage: string
   learningLanguage: string
   tasksPerSession: number
-  email: string
 }

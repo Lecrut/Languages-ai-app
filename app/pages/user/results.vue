@@ -61,7 +61,12 @@ const loadMoreSessions = async () => {
     return
   }
 
-  await resultsStore.fetchLatestSessions(uid, { loadMore: true })
+  try {
+    await resultsStore.fetchLatestSessions(uid, { loadMore: true })
+  }
+  catch {
+    // Error is shown through shared snackbar handling.
+  }
 }
 
 watch(
@@ -71,7 +76,12 @@ watch(
       return
     }
 
-    await resultsStore.fetchLatestSessions(uid)
+    try {
+      await resultsStore.fetchLatestSessions(uid)
+    }
+    catch {
+      // Error is shown through shared snackbar handling.
+    }
   },
   { immediate: true },
 )
@@ -87,162 +97,164 @@ watch(
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12" md="4" lg="3">
-      <VCard>
-        <VCardTitle class="text-h6">{{ t('results.statsTitle') }}</VCardTitle>
-        <VCardText class="d-flex flex-column ga-4">
-          <VProgressCircular
-            :model-value="summaryAccuracy"
-            color="primary"
-            :size="120"
-            :width="12"
-            class="align-self-center"
-          >
-            <span class="text-h6">{{ summaryAccuracy }}%</span>
-          </VProgressCircular>
+  <div>
+    <VRow>
+      <VCol cols="12" md="4" lg="3">
+        <VCard>
+          <VCardTitle class="text-h6">{{ t('results.statsTitle') }}</VCardTitle>
+          <VCardText class="d-flex flex-column ga-4">
+            <VProgressCircular
+              :model-value="summaryAccuracy"
+              color="primary"
+              :size="120"
+              :width="12"
+              class="align-self-center"
+            >
+              <span class="text-h6">{{ summaryAccuracy }}%</span>
+            </VProgressCircular>
 
-          <VChip color="success" variant="flat" prepend-icon="mdi-check">
-            {{ t('results.correctCount', { count: summaryCorrectCount }) }}
-          </VChip>
-
-          <VChip color="info" variant="tonal">
-            {{ t('results.averageCorrectPerSession', { count: averageCorrectPerSession }) }}
-          </VChip>
-
-          <p class="text-body-2 text-medium-emphasis mb-0">
-            {{ t('results.statsInfo') }}
-          </p>
-        </VCardText>
-      </VCard>
-    </VCol>
-
-    <VCol cols="12" md="8" lg="6">
-      <VCard class="mb-4">
-        <VCardTitle class="text-h5">{{ t('results.title') }}</VCardTitle>
-        <VCardText>{{ t('results.description') }}</VCardText>
-      </VCard>
-
-      <VCard
-        v-for="session in resultsStore.sessions"
-        :key="session.id"
-        class="mb-3 cursor-pointer"
-        :variant="selectedSessionId === session.id ? 'tonal' : 'elevated'"
-        @click="openSessionDetails(session.id)"
-      >
-        <VCardText class="d-flex flex-column ga-3">
-          <div class="d-flex align-center justify-space-between flex-wrap ga-2">
-            <span class="text-subtitle-1">{{ formatDateTime(session.date, locale) }}</span>
-            <VChip color="primary" variant="tonal">
-              {{ t('results.sessionTasks', { count: session.totalTasks }) }}
-            </VChip>
-          </div>
-
-          <div class="d-flex ga-2 flex-wrap">
             <VChip color="success" variant="flat" prepend-icon="mdi-check">
-              {{ t('results.correctCount', { count: session.correctCount }) }}
+              {{ t('results.correctCount', { count: summaryCorrectCount }) }}
             </VChip>
-            <VChip color="error" variant="flat" prepend-icon="mdi-close">
-              {{ t('results.incorrectCount', { count: session.incorrectCount }) }}
+
+            <VChip color="info" variant="tonal">
+              {{ t('results.averageCorrectPerSession', { count: averageCorrectPerSession }) }}
             </VChip>
-          </div>
-        </VCardText>
-      </VCard>
 
-      <VBtn
-        v-if="resultsStore.hasMore"
-        color="primary"
-        variant="tonal"
-        block
-        :loading="resultsStore.loadingMore"
-        @click="loadMoreSessions"
-      >
-        {{ t('results.loadMore') }}
-      </VBtn>
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              {{ t('results.statsInfo') }}
+            </p>
+          </VCardText>
+        </VCard>
+      </VCol>
 
-      <VAlert
-        v-if="!resultsStore.sessions.length"
-        type="info"
-        variant="tonal"
-        class="mt-4"
-      >
-        {{ t('results.empty') }}
-      </VAlert>
-    </VCol>
+      <VCol cols="12" md="8" lg="6">
+        <VCard class="mb-4">
+          <VCardTitle class="text-h5">{{ t('results.title') }}</VCardTitle>
+          <VCardText>{{ t('results.description') }}</VCardText>
+        </VCard>
 
-    <VCol v-if="lgAndUp" cols="12" lg="3">
-      <VCard>
-        <VCardTitle class="text-h6">{{ t('results.detailsTitle') }}</VCardTitle>
-        <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
-          <p class="text-body-2 text-medium-emphasis mb-0">
-            {{ formatDateTime(selectedSession.date, locale) }}
-          </p>
+        <VCard
+          v-for="session in resultsStore.sessions"
+          :key="session.id"
+          class="mb-3 cursor-pointer"
+          :variant="selectedSessionId === session.id ? 'tonal' : 'elevated'"
+          @click="openSessionDetails(session.id)"
+        >
+          <VCardText class="d-flex flex-column ga-3">
+            <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+              <span class="text-subtitle-1">{{ formatDateTime(session.date, locale) }}</span>
+              <VChip color="primary" variant="tonal">
+                {{ t('results.sessionTasks', { count: session.totalTasks }) }}
+              </VChip>
+            </div>
 
-          <VCard
-            v-for="task in orderedTasks"
-            :key="task.id"
-            :color="task.isPassed ? 'success' : 'error'"
-            variant="tonal"
-          >
-            <VCardText class="d-flex flex-column ga-2">
-              <div class="d-flex align-center ga-2">
-                <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
-                <span class="text-subtitle-2">{{ task.question }}</span>
-              </div>
-              <p class="mb-0 text-body-2">
-                {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
-              </p>
-              <p class="mb-0 text-body-2">
-                {{ t('results.correctAnswerLabel') }}: {{ task.correctAnswer }}
-              </p>
-            </VCardText>
-          </VCard>
-        </VCardText>
-        <VCardText v-else>
-          <VAlert type="info" variant="tonal">
-            {{ t('results.selectSession') }}
-          </VAlert>
-        </VCardText>
-      </VCard>
-    </VCol>
-  </VRow>
+            <div class="d-flex ga-2 flex-wrap">
+              <VChip color="success" variant="flat" prepend-icon="mdi-check">
+                {{ t('results.correctCount', { count: session.correctCount }) }}
+              </VChip>
+              <VChip color="error" variant="flat" prepend-icon="mdi-close">
+                {{ t('results.incorrectCount', { count: session.incorrectCount }) }}
+              </VChip>
+            </div>
+          </VCardText>
+        </VCard>
 
-  <ClientOnly>
-    <VDialog v-model="detailsDialogVisible" max-width="720">
-      <VCard>
-        <VCardTitle class="text-h6">{{ t('results.detailsTitle') }}</VCardTitle>
-        <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
-          <p class="text-body-2 text-medium-emphasis mb-0">
-            {{ formatDateTime(selectedSession.date, locale) }}
-          </p>
+        <VBtn
+          v-if="resultsStore.hasMore"
+          color="primary"
+          variant="tonal"
+          block
+          :loading="resultsStore.loadingMore"
+          @click="loadMoreSessions"
+        >
+          {{ t('results.loadMore') }}
+        </VBtn>
 
-          <VCard
-            v-for="task in orderedTasks"
-            :key="task.id"
-            :color="task.isPassed ? 'success' : 'error'"
-            variant="tonal"
-          >
-            <VCardText class="d-flex flex-column ga-2">
-              <div class="d-flex align-center ga-2">
-                <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
-                <span class="text-subtitle-2">{{ task.question }}</span>
-              </div>
-              <p class="mb-0 text-body-2">
-                {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
-              </p>
-              <p class="mb-0 text-body-2">
-                {{ t('results.correctAnswerLabel') }}: {{ task.correctAnswer }}
-              </p>
-            </VCardText>
-          </VCard>
-        </VCardText>
-        <VCardActions>
-          <VSpacer />
-          <VBtn variant="text" @click="detailsDialogVisible = false">
-            {{ t('results.close') }}
-          </VBtn>
-        </VCardActions>
-      </VCard>
-    </VDialog>
-  </ClientOnly>
+        <VAlert
+          v-if="!resultsStore.sessions.length"
+          type="info"
+          variant="tonal"
+          class="mt-4"
+        >
+          {{ t('results.empty') }}
+        </VAlert>
+      </VCol>
+
+      <VCol v-if="lgAndUp" cols="12" lg="3">
+        <VCard>
+          <VCardTitle class="text-h6">{{ t('results.detailsTitle') }}</VCardTitle>
+          <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              {{ formatDateTime(selectedSession.date, locale) }}
+            </p>
+
+            <VCard
+              v-for="task in orderedTasks"
+              :key="task.id"
+              :color="task.isPassed ? 'success' : 'error'"
+              variant="tonal"
+            >
+              <VCardText class="d-flex flex-column ga-2">
+                <div class="d-flex align-center ga-2">
+                  <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
+                  <span class="text-subtitle-2">{{ task.question }}</span>
+                </div>
+                <p class="mb-0 text-body-2">
+                  {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
+                </p>
+                <p class="mb-0 text-body-2">
+                  {{ t('results.correctAnswerLabel') }}: {{ task.correctAnswer }}
+                </p>
+              </VCardText>
+            </VCard>
+          </VCardText>
+          <VCardText v-else>
+            <VAlert type="info" variant="tonal">
+              {{ t('results.selectSession') }}
+            </VAlert>
+          </VCardText>
+        </VCard>
+      </VCol>
+    </VRow>
+
+    <ClientOnly>
+      <VDialog v-model="detailsDialogVisible" max-width="720">
+        <VCard>
+          <VCardTitle class="text-h6">{{ t('results.detailsTitle') }}</VCardTitle>
+          <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              {{ formatDateTime(selectedSession.date, locale) }}
+            </p>
+
+            <VCard
+              v-for="task in orderedTasks"
+              :key="task.id"
+              :color="task.isPassed ? 'success' : 'error'"
+              variant="tonal"
+            >
+              <VCardText class="d-flex flex-column ga-2">
+                <div class="d-flex align-center ga-2">
+                  <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
+                  <span class="text-subtitle-2">{{ task.question }}</span>
+                </div>
+                <p class="mb-0 text-body-2">
+                  {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
+                </p>
+                <p class="mb-0 text-body-2">
+                  {{ t('results.correctAnswerLabel') }}: {{ task.correctAnswer }}
+                </p>
+              </VCardText>
+            </VCard>
+          </VCardText>
+          <VCardActions>
+            <VSpacer />
+            <VBtn variant="text" @click="detailsDialogVisible = false">
+              {{ t('results.close') }}
+            </VBtn>
+          </VCardActions>
+        </VCard>
+      </VDialog>
+    </ClientOnly>
+  </div>
 </template>
