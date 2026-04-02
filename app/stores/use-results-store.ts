@@ -45,10 +45,6 @@ export const useResultsStore = defineStore('results', () => {
   const saving = computed(() => sharedStore.loading)
   const error = computed(() => sharedStore.error)
 
-  /**
-   * Saves a single task result to users/{userId}/results/{taskId}
-   * Creates or updates the document with isPassed and lastAttempt timestamp
-   */
   const saveTaskResult = async (uid: string, taskId: string, payload: SaveTaskResultPayload) => {
     const { db } = useFirebase()
 
@@ -88,7 +84,6 @@ export const useResultsStore = defineStore('results', () => {
         userAnswer,
       }))
 
-      // Save session-level results
       await withTimeout(
         addDoc(collection(db, FIREBASE_COLLECTIONS.results), {
           userReference,
@@ -98,7 +93,6 @@ export const useResultsStore = defineStore('results', () => {
         'Saving results timed out',
       )
 
-      // Save individual task results to subcollection users/{uid}/results/{taskId}
       await Promise.all(
         taskResults.map(taskResult =>
           saveTaskResult(uid, taskResult.taskId, {

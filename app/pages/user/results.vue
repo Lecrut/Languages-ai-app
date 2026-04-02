@@ -64,9 +64,8 @@ const loadMoreSessions = async () => {
   try {
     await resultsStore.fetchLatestSessions(uid, { loadMore: true })
   }
-  catch {
-    // Error is shown through shared snackbar handling.
-  }
+  // eslint-disable-next-line
+  catch (_e) {}
 }
 
 watch(
@@ -79,9 +78,8 @@ watch(
     try {
       await resultsStore.fetchLatestSessions(uid)
     }
-    catch {
-      // Error is shown through shared snackbar handling.
-    }
+    // eslint-disable-next-line
+    catch (_e) {}
   },
   { immediate: true },
 )

@@ -23,6 +23,8 @@ const emit = defineEmits<{
 }>()
 
 const selectedArrangeWords = ref<string[]>([])
+const isSpeaking = ref(false)
+const isPaused = ref(false)
 const { mdAndUp } = useDisplay()
 
 const optionColors = ['primary', 'success', 'warning', 'info'] as const
@@ -96,6 +98,54 @@ const submitOptionAnswer = (option: string) => {
 
   emit('submitAnswer', option)
 }
+
+const speakAnswer = (text: string) => {
+  if (!('speechSynthesis' in window)) {
+    return
+  }
+
+  if (isPaused.value) {
+    window.speechSynthesis.resume()
+    isPaused.value = false
+    return
+  }
+
+  window.speechSynthesis.cancel()
+  isPaused.value = false
+
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'en-US'
+  utterance.rate = 0.9
+
+  utterance.onstart = () => {
+    isSpeaking.value = true
+  }
+
+  utterance.onend = () => {
+    isSpeaking.value = false
+    isPaused.value = false
+  }
+
+  utterance.onerror = () => {
+    isSpeaking.value = false
+    isPaused.value = false
+  }
+
+  window.speechSynthesis.speak(utterance)
+}
+
+const stopSpeaking = () => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel()
+    isSpeaking.value = false
+    isPaused.value = false
+  }
+}
+
+const speakQuestionWithAnswer = (question: string, answer: string) => {
+  const questionWithAnswer = question.replace(/_+/, answer)
+  speakAnswer(questionWithAnswer)
+}
 </script>
 
 <template>
@@ -161,7 +211,7 @@ const submitOptionAnswer = (option: string) => {
             <p class="text-body-small text-medium-emphasis mb-2">
               {{ task?.topic }}
             </p>
-            <div :class="[questionTypographyClass, 'font-weight-bold mb-0']">
+            <div :class="[questionTypographyClass, 'font-weight-bold mb-0 text-wrap whitespace-normal']">
               {{ task?.question }}
             </div>
           </div>
@@ -186,7 +236,7 @@ const submitOptionAnswer = (option: string) => {
                 </VChip>
               </div>
 
-              <VRow density="comfortable">
+              <VRow density="compact">
                 <VCol
                   v-for="(option, optionIndex) in task?.options"
                   :key="`${option}-${optionIndex}`"
@@ -195,7 +245,7 @@ const submitOptionAnswer = (option: string) => {
                 >
                   <VBtn
                     block
-                    class="text-none text-wrap py-3"
+                    class="text-none text-wrap text-body-small py-2 whitespace-normal h-auto"
                     :color="optionColors[optionIndex % optionColors.length]"
                     variant="flat"
                     :disabled="isAnswered"
@@ -226,7 +276,7 @@ const submitOptionAnswer = (option: string) => {
               </div>
             </div>
 
-            <VRow v-else-if="!isAnswered" density="comfortable">
+            <VRow v-else-if="!isAnswered" density="compact">
               <VCol
                 v-for="(option, optionIndex) in task?.options"
                 :key="`${option}-${optionIndex}`"
@@ -235,7 +285,7 @@ const submitOptionAnswer = (option: string) => {
               >
                 <VBtn
                   block
-                  class="text-none text-wrap py-3"
+                  class="text-none text-wrap text-body-small py-2 whitespace-normal h-auto"
                   :color="optionColors[optionIndex % optionColors.length]"
                   variant="flat"
                   :disabled="isAnswered"
@@ -248,21 +298,44 @@ const submitOptionAnswer = (option: string) => {
 
             <div v-if="isAnswered" class="d-flex flex-column ga-3">
               <VCard variant="flat" color="success">
-                <VCardText class="d-flex align-center ga-2">
-                  <VIcon icon="mdi-check" />
-                  <div>
-                    <p class="text-body-small my-0">{{ $t('play.correctAnswerTile') }}</p>
-                    <p class="mb-0 text-body-large font-weight-bold">{{ correctAnswerLabel }}</p>
+                <VCardText class="d-flex align-center justify-space-between ga-2">
+                  <div class="d-flex align-center ga-2">
+                    <VIcon icon="mdi-check" />
+                    <div>
+                      <p class="text-body-small my-0">{{ $t('play.correctAnswerTile') }}</p>
+                      <p class="mb-0 text-body-large font-weight-bold">{{ correctAnswerLabel }}</p>
+                    </div>
+                  </div>
+                  <div class="d-flex ga-1">
+                    <VBtn
+                      icon
+                      variant="text"
+                      size="small"
+                      @click="speakQuestionWithAnswer(task?.question || '', correctAnswerLabel)"
+                    >
+                      <VIcon :icon="!isSpeaking ? 'mdi-play' : isPaused ? 'mdi-play' : 'mdi-pause'" />
+                    </VBtn>
+                    <VBtn
+                      v-if="isSpeaking || isPaused"
+                      icon
+                      variant="text"
+                      size="small"
+                      @click="stopSpeaking"
+                    >
+                      <VIcon icon="mdi-stop" />
+                    </VBtn>
                   </div>
                 </VCardText>
               </VCard>
 
               <VCard v-if="showSelectedAnswerTile" variant="flat" color="error">
-                <VCardText class="d-flex align-center ga-2">
-                  <VIcon icon="mdi-close" />
-                  <div>
-                    <p class="text-body-small mb-1">{{ $t('play.selectedAnswerTile') }}</p>
-                    <p class="mb-0 text-body-large">{{ selectedAnswerLabel }}</p>
+                <VCardText class="d-flex align-center justify-space-between ga-2">
+                  <div class="d-flex align-center ga-2">
+                    <VIcon icon="mdi-close" />
+                    <div>
+                      <p class="text-body-small my-0">{{ $t('play.selectedAnswerTile') }}</p>
+                      <p class="mb-0 text-body-large font-weight-bold">{{ selectedAnswerLabel }}</p>
+                    </div>
                   </div>
                 </VCardText>
               </VCard>
@@ -282,3 +355,20 @@ const submitOptionAnswer = (option: string) => {
     </VCardText>
   </VCard>
 </template>
+
+<style scoped>
+:deep(.v-btn.text-wrap) {
+  height: auto !important;
+  min-height: 44px !important;
+}
+
+:deep(.v-btn.text-wrap .v-btn__content) {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  display: block !important;
+  padding: 8px !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+}
+</style>

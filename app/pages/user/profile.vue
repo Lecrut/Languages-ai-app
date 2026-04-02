@@ -162,9 +162,7 @@ const handleSaveProfile = async () => {
     saveSuccess.value = true
     isEditing.value = false
   }
-  catch {
-    // Error message is handled in the profile store.
-  }
+  catch (e) {}
 }
 </script>
 

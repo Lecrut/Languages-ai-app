@@ -108,7 +108,6 @@ const startSessionWithMode = async (mode: TaskLoadMode) => {
 
     const tasksCount = clampTasksPerSession(profile?.tasksPerSession ?? TASKS_PER_SESSION_DEFAULT)
 
-    // Load tasks using the task loader with fallback logic
     const tasks = await taskLoader.loadTasks({
       mode,
       tasksCount,
@@ -121,7 +120,6 @@ const startSessionWithMode = async (mode: TaskLoadMode) => {
       },
     })
 
-    // Set tasks in session store
     taskSessionStore.setSessionTasks(tasks)
     taskSessionStore.startSession()
   }
@@ -156,9 +154,8 @@ const resendVerificationEmail = async () => {
     await authStore.resendVerificationEmail()
     snackbarStore.showSuccess(t('auth.verificationEmailSent') || 'Verification email sent. Please check your inbox.')
   }
-  catch {
-    // Error is handled in auth store
-  }
+  // eslint-disable-next-line
+  catch (_e) {}
 }
 
 watch(
@@ -238,7 +235,7 @@ watch(
 
         <VCardText v-else class="pt-8">
           <VCardTitle class="text-headline-large mb-2 text-center">{{ t('play.title') }}</VCardTitle>
-          <p class="text-body-large mb-6 text-center text-medium-emphasis">{{ t('play.description') }}</p>
+          <!-- <p class="text-body-large mb-6 text-center text-medium-emphasis">{{ t('play.description') }}</p> -->
 
           <div class="mb-6">
             <p class="text-body-medium font-weight-bold mb-4">{{ t('play.selectTopic') || 'Select a topic:' }}</p>

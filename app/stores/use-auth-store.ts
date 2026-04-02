@@ -156,7 +156,6 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       
-      // Create user profile document in Firestore
       const userDocRef = doc(db, FIREBASE_COLLECTIONS.users, userCredential.user.uid)
       await setDoc(userDocRef, {
         uid: userCredential.user.uid,
@@ -169,10 +168,8 @@ export const useAuthStore = defineStore('auth', () => {
         createdAt: serverTimestamp(),
       })
       
-      // Send verification email
       await sendEmailVerification(userCredential.user)
       
-      // Sign out immediately so user must verify email before logging in
       await signOut(auth)
       user.value = null
       userProfileStore.reset()

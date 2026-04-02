@@ -172,10 +172,6 @@ export const useTaskSessionStore = defineStore('task-session', () => {
     generationError.value = null
   }
 
-  /**
-   * Set tasks directly (used by useTaskLoader)
-   * This bypasses AI generation and sets pre-loaded tasks
-   */
   const setSessionTasks = (sessionTasks: TaskSessionTask[]) => {
     if (sessionTasks.length === 0) {
       generationError.value = 'No tasks loaded'
