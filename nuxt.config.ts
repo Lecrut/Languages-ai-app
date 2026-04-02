@@ -4,6 +4,7 @@ const isDev = process.env.NODE_ENV !== 'production'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  ssr: false,
 
   app: {
     head: {
@@ -29,7 +30,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxtjs/i18n',
-    ...(isDev ? [] : ['@vite-pwa/nuxt', '@nuxtjs/html-validator']),
+    ...(isDev ? [] : ['@vite-pwa/nuxt']),
     '@nuxtjs/google-fonts',
     '@nuxt/scripts',
     '@nuxt/image',

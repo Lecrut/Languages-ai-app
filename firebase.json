@@ -1,0 +1,19 @@
+{
+  "hosting": {
+    "public": ".output/public",
+    "predeploy": [
+      "bun run generate"
+    ],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
