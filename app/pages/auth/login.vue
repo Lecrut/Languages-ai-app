@@ -70,30 +70,32 @@ const handleLogin = async () => {
     <VCol cols="12" sm="10" md="8" lg="5">
       <VCard>
         <VCardTitle class="text-headline-large text-center my-3">{{ t('login.title') }}</VCardTitle>
-        <VCardText>
-          <VTextField v-model="email" :label="t('login.email')" :rules="emailRules" type="email" variant="outlined" class="mb-3" />
-          <VTextField
-            v-model="password"
-            :label="t('login.password')"
-            :rules="passwordRules"
-            :type="showPassword ? 'text' : 'password'"
-            :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-            variant="outlined"
-            @click:append-inner="showPassword = !showPassword"
-          />
-        </VCardText>
-        <VCardActions class="justify-center pt-0">
-          <VBtn
-            color="primary"
-            size="large"
-            class="px-10"
-            :loading="authStore.loading"
-            :disabled="isSubmitDisabled"
-            @click="handleLogin"
-          >
-            {{ t('login.submit') }}
-          </VBtn>
-        </VCardActions>
+        <VForm @submit.prevent="handleLogin">
+          <VCardText>
+            <VTextField v-model="email" :label="t('login.email')" :rules="emailRules" type="email" variant="outlined" class="mb-3" />
+            <VTextField
+              v-model="password"
+              :label="t('login.password')"
+              :rules="passwordRules"
+              :type="showPassword ? 'text' : 'password'"
+              :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+              variant="outlined"
+              @click:append-inner="showPassword = !showPassword"
+            />
+          </VCardText>
+          <VCardActions class="justify-center pt-0">
+            <VBtn
+              type="submit"
+              color="primary"
+              size="large"
+              class="px-10"
+              :loading="authStore.loading"
+              :disabled="isSubmitDisabled"
+            >
+              {{ t('login.submit') }}
+            </VBtn>
+          </VCardActions>
+        </VForm>
 
         <VCardText class="pt-2 pb-4 d-flex flex-column align-center text-center ga-1">
           <div class="text-body-medium">{{ t('login.noAccount') }}</div>
