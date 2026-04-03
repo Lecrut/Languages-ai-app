@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useDisplay } from 'vuetify'
+import { useRoute } from 'vue-router'
 import { useSharedStore } from '../stores/use-shared-store'
 
 const { smAndDown } = useDisplay()
 const contentContainerClass = computed(() => (smAndDown.value ? 'py-6 pb-16' : 'py-6'))
+const route = useRoute()
+const isResultsRoute = computed(() => route.path.includes('/user/results'))
 const sharedStore = useSharedStore()
 </script>
 
@@ -13,7 +17,7 @@ const sharedStore = useSharedStore()
     <AppSnackbar />
 
     <VMain class="position-relative">
-      <VContainer :class="contentContainerClass">
+      <VContainer :fluid="isResultsRoute" :class="contentContainerClass">
         <slot />
       </VContainer>
 

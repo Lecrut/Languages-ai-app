@@ -18,7 +18,23 @@ interface UseTaskLoaderParams {
   mode: TaskLoadMode
   tasksCount: number
   userId: string
+  preferredSubject: string
+  preferredLevel: string
   aiPromptParams: Omit<AiTaskPromptParams, 'tasksCount'>
+}
+
+const normalizeLanguageLabel = (value: string) => value.trim().toLowerCase()
+
+const normalizeLevel = (value: string) => value.trim().toLowerCase()
+
+const matchesPreferredProfile = (task: TaskSessionTask, preferredSubject: string, preferredLevel: string) => {
+  const normalizedPreferredSubject = normalizeLanguageLabel(preferredSubject)
+  const normalizedPreferredLevel = normalizeLevel(preferredLevel)
+
+  return (
+    normalizeLanguageLabel(task.subject) === normalizedPreferredSubject
+    || normalizeLanguageLabel(task.targetLanguage) === normalizedPreferredSubject
+  ) && normalizeLevel(task.level) === normalizedPreferredLevel
 }
 
 export function useTaskLoader() {
@@ -153,7 +169,8 @@ export function useTaskLoader() {
 
       let tasks: TaskSessionTask[] = []
       if (taskIds.length > 0) {
-        tasks = await fetchTaskDocuments(taskIds.slice(0, params.tasksCount))
+        const fetchedTasks = await fetchTaskDocuments(taskIds.slice(0, params.tasksCount))
+        tasks = fetchedTasks.filter(task => matchesPreferredProfile(task, params.preferredSubject, params.preferredLevel))
       }
 
       const remainingCount = params.tasksCount - tasks.length

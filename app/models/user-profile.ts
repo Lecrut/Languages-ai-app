@@ -5,6 +5,7 @@ export interface UserProfile {
   nick: string
   appLanguage: string
   learningLanguage: string
+  appTheme: 'light' | 'dark'
   level: LearningLevel
   tasksPerSession: number
   email: string
@@ -15,6 +16,7 @@ export interface UserProfileUpdatePayload {
   nick: string
   appLanguage: string
   learningLanguage: string
+  appTheme: 'light' | 'dark'
   level: LearningLevel
   tasksPerSession: number
 }

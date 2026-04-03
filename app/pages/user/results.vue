@@ -46,8 +46,15 @@ const orderedTasks = computed(() => {
 
   return [...selectedSession.value.tasks].sort((firstTask, secondTask) => Number(secondTask.isPassed) - Number(firstTask.isPassed))
 })
+const desktopResultsStyle = computed(() => (lgAndUp.value ? { height: 'calc(100dvh - 112px)' } : undefined))
 
 const openSessionDetails = (sessionId: string) => {
+  if (selectedSessionId.value === sessionId) {
+    selectedSessionId.value = null
+    detailsDialogVisible.value = false
+    return
+  }
+
   selectedSessionId.value = sessionId
 
   if (!lgAndUp.value) {
@@ -95,42 +102,46 @@ watch(
 </script>
 
 <template>
-  <div>
-    <VRow>
-      <VCol cols="12" md="4" lg="3">
-        <VCard>
-          <VCardTitle class="text-headline-small">{{ t('results.statsTitle') }}</VCardTitle>
-          <VCardText class="d-flex flex-column ga-4">
-            <VProgressCircular
-              :model-value="summaryAccuracy"
-              color="primary"
-              :size="120"
-              :width="12"
-              class="align-self-center"
-            >
-              <span class="text-headline-small">{{ summaryAccuracy }}%</span>
-            </VProgressCircular>
+  <div class="results-board" :class="{ 'results-board--desktop': lgAndUp }">
+    <VCard class="results-panel results-panel--stats results-panel--stats-card">
+      <VCardTitle class="text-headline-small">{{ t('results.statsTitle') }}</VCardTitle>
+      <VCardText class="results-panel__body d-flex flex-column ga-4">
+        <VProgressCircular
+          :model-value="summaryAccuracy"
+          color="primary"
+          :size="120"
+          :width="12"
+          class="align-self-center"
+        >
+          <span class="text-headline-small">{{ summaryAccuracy }}%</span>
+        </VProgressCircular>
 
-            <VAlert type="success" variant="tonal" prepend-icon="mdi-check">
-              {{ t('results.correctCount', { count: summaryCorrectCount }) }}
-            </VAlert>
+        <VAlert type="success" variant="tonal" prepend-icon="mdi-check">
+          {{ t('results.correctCount', { count: summaryCorrectCount }) }}
+        </VAlert>
 
-            <VAlert type="info" variant="tonal">
-              {{ t('results.averageCorrectPerSession', { count: averageCorrectPerSession }) }}
-            </VAlert>
+        <VAlert type="info" variant="tonal">
+          {{ t('results.averageCorrectPerSession', { count: averageCorrectPerSession }) }}
+        </VAlert>
 
-            <p class="text-body-medium text-medium-emphasis mb-0">
-              {{ t('results.statsInfo') }}
-            </p>
-          </VCardText>
-        </VCard>
-      </VCol>
+        <p class="text-body-medium text-medium-emphasis mb-0">
+          {{ t('results.statsInfo') }}
+        </p>
+      </VCardText>
+    </VCard>
 
-      <VCol cols="12" md="8" lg="5">
-        <VCard class="mb-4">
-          <VCardTitle class="text-headline-large">{{ t('results.title') }}</VCardTitle>
-          <VCardText>{{ t('results.description') }}</VCardText>
-        </VCard>
+    <VCard class="results-panel results-panel--sessions">
+      <VCardTitle class="text-headline-large">{{ t('results.title') }}</VCardTitle>
+      <VCardText class="pb-2">
+        {{ t('results.description') }}
+      </VCardText>
+
+      <div class="results-panel__body px-6 pb-6">
+        <div v-if="!resultsStore.sessions.length" class="mt-2">
+          <VAlert type="info" variant="tonal">
+            {{ t('results.empty') }}
+          </VAlert>
+        </div>
 
         <VCard
           v-for="session in resultsStore.sessions"
@@ -139,7 +150,7 @@ watch(
           :variant="selectedSessionId === session.id ? 'tonal' : 'elevated'"
           @click="openSessionDetails(session.id)"
         >
-          <VCardText class="d-flex flex-column ga-3">
+          <VCardText class="d-flex flex-column ga-3 py-3">
             <div class="d-flex align-center justify-space-between flex-wrap ga-2">
               <span class="text-body-large">{{ formatDateTime(session.date, locale) }}</span>
               <VChip color="primary" variant="tonal">
@@ -168,30 +179,28 @@ watch(
         >
           {{ t('results.loadMore') }}
         </VBtn>
+      </div>
+    </VCard>
 
-        <VAlert
-          v-if="!resultsStore.sessions.length"
-          type="info"
-          variant="tonal"
-          class="mt-4"
-        >
-          {{ t('results.empty') }}
-        </VAlert>
-      </VCol>
+    <VCard v-if="lgAndUp" class="results-panel results-panel--details">
+      <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
 
-      <VCol v-if="lgAndUp" cols="12" lg="4">
-        <VCard>
-          <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
-          <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
-            <p class="text-body-medium text-medium-emphasis mb-0">
-              {{ formatDateTime(selectedSession.date, locale) }}
-            </p>
+      <div v-if="selectedSession" class="results-panel__body px-6 pb-6">
+        <div class="text-body-medium text-medium-emphasis mb-3">
+          {{ formatDateTime(selectedSession.date, locale) }}
+        </div>
 
+        <VRow dense>
+          <VCol
+            v-for="task in orderedTasks"
+            :key="task.id"
+            cols="12"
+            md="6"
+          >
             <VCard
-              v-for="task in orderedTasks"
-              :key="task.id"
               :color="task.isPassed ? 'success' : 'error'"
               variant="tonal"
+              class="h-100"
             >
               <VCardText class="d-flex flex-column ga-2">
                 <div class="d-flex align-center ga-2">
@@ -206,15 +215,16 @@ watch(
                 </p>
               </VCardText>
             </VCard>
-          </VCardText>
-          <VCardText v-else>
-            <VAlert type="info" variant="tonal">
-              {{ t('results.selectSession') }}
-            </VAlert>
-          </VCardText>
-        </VCard>
-      </VCol>
-    </VRow>
+          </VCol>
+        </VRow>
+      </div>
+
+      <VCardText v-else class="results-panel__body px-6 pb-6 d-flex align-start">
+        <VAlert type="info" variant="tonal" class="w-100">
+          {{ t('results.selectSession') }}
+        </VAlert>
+      </VCardText>
+    </VCard>
 
     <ClientOnly>
       <VDialog v-model="detailsDialogVisible" max-width="720">
@@ -256,3 +266,66 @@ watch(
     </ClientOnly>
   </div>
 </template>
+
+<style scoped>
+.results-board {
+  display: block;
+}
+
+.results-panel {
+  margin-bottom: 1rem;
+}
+
+.results-panel__body {
+  min-height: 0;
+}
+
+.results-panel--sessions .results-panel__body,
+.results-panel--details .results-panel__body {
+  overflow-y: auto;
+}
+
+@media (min-width: 1280px) {
+  .results-board--desktop {
+    display: grid;
+    grid-template-columns: minmax(300px, 3fr) minmax(360px, 4fr) minmax(420px, 5fr);
+    gap: 24px;
+    height: calc(100dvh - 112px);
+    overflow: hidden;
+  }
+
+  .results-board--desktop .results-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    margin-bottom: 0;
+  }
+
+  .results-board--desktop .results-panel--stats,
+  .results-board--desktop .results-panel--sessions,
+  .results-board--desktop .results-panel--details {
+    overflow: hidden;
+  }
+
+  .results-board--desktop .results-panel--stats-card {
+    height: fit-content;
+    align-self: start;
+  }
+
+  .results-board--desktop .results-panel--stats-card .results-panel__body {
+    flex: 0 0 auto;
+  }
+
+  .results-board--desktop .results-panel--sessions .results-panel__body,
+  .results-board--desktop .results-panel--details .results-panel__body {
+    flex: 1 1 auto;
+  }
+
+  .results-board--desktop .results-panel--sessions .results-panel__body,
+  .results-board--desktop .results-panel--details .results-panel__body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+</style>

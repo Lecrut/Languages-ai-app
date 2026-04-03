@@ -147,7 +147,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, nick: string) => {
     const { auth, db } = useFirebase()
 
     sharedStore.startLoading()
@@ -159,9 +159,10 @@ export const useAuthStore = defineStore('auth', () => {
       const userDocRef = doc(db, FIREBASE_COLLECTIONS.users, userCredential.user.uid)
       await setDoc(userDocRef, {
         uid: userCredential.user.uid,
-        nick: getDefaultNicknameFromEmail(userCredential.user.email),
+        nick: nick.trim() || getDefaultNicknameFromEmail(userCredential.user.email),
         appLanguage: 'pl',
         learningLanguage: 'en',
+        appTheme: 'light',
         level: DEFAULT_LEARNING_LEVEL,
         tasksPerSession: TASKS_PER_SESSION_DEFAULT,
         email: userCredential.user.email ?? '',

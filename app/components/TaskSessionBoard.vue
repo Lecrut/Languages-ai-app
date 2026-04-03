@@ -22,7 +22,10 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
+
 const selectedArrangeWords = ref<string[]>([])
+const shuffledArrangeWords = ref<string[]>([])
 const isSpeaking = ref(false)
 const { mdAndUp } = useDisplay()
 
@@ -54,6 +57,20 @@ const taskHint = computed(() => {
   return normalizedHint.length > 0 ? normalizedHint : null
 })
 const questionTypographyClass = computed(() => (mdAndUp.value ? 'text-display-medium' : 'text-headline-small'))
+const taskTypeInstruction = computed(() => {
+  switch (props.task?.type) {
+    case 'arrange_words':
+      return t('play.taskInstructions.arrangeWords')
+    case 'fill_blank_select':
+      return t('play.taskInstructions.fillBlankSelect')
+    case 'odd_one_out':
+      return t('play.taskInstructions.oddOneOut')
+    case 'multiple_choice':
+      return t('play.taskInstructions.multipleChoice')
+    default:
+      return ''
+  }
+})
 const showSelectedAnswerTile = computed(() => {
   if (!isAnswered.value) {
     return false
@@ -66,7 +83,9 @@ watch(
   () => props.task?.id,
   () => {
     selectedArrangeWords.value = []
+    shuffledArrangeWords.value = [...(props.task?.options ?? [])].sort(() => Math.random() - 0.5)
   },
+  { immediate: true },
 )
 
 const addArrangeWord = (word: string) => {
@@ -92,6 +111,11 @@ const clearArrangeWords = () => {
 
   selectedArrangeWords.value = []
 }
+
+const arrangeWordOptions = computed(() => shuffledArrangeWords.value.length > 0
+  ? shuffledArrangeWords.value
+  : (props.task?.options ?? []),
+)
 
 const submitArrangeAnswer = () => {
   if (!canSubmitArrangeAnswer.value || isAnswered.value) {
@@ -224,6 +248,9 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
                 {{ task?.topic }}
               </VChip>
             </div>
+            <div v-if="taskTypeInstruction" class="text-body-medium text-medium-emphasis font-italic my-4">
+              {{ taskTypeInstruction }}
+            </div>
             <div class="d-flex align-start ga-2">
               <div :class="[questionTypographyClass, 'font-weight-bold mb-0 text-wrap whitespace-normal flex-grow-1']">
                 {{ task?.question }}
@@ -256,7 +283,7 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
             color="surface"
           >
             <div v-if="isArrangeTask && !isAnswered" class="d-flex flex-column ga-4">
-              <div class="d-flex ga-2 flex-wrap min-h-25">
+              <div class="d-flex ga-2 flex-wrap justify-center min-h-25">
                 <VChip
                   v-for="(word, index) in selectedArrangeWords"
                   :key="`${word}-${index}`"
@@ -271,7 +298,7 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
 
               <VRow density="compact">
                 <VCol
-                  v-for="(option, optionIndex) in task?.options"
+                  v-for="(option, optionIndex) in arrangeWordOptions"
                   :key="`${option}-${optionIndex}`"
                   cols="12"
                   sm="6"
@@ -289,7 +316,7 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
                 </VCol>
               </VRow>
 
-              <div class="d-flex ga-2 flex-wrap">
+              <div class="d-flex justify-center ga-2 flex-wrap">
                 <VBtn
                   color="primary"
                   variant="flat"

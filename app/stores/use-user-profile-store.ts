@@ -38,6 +38,7 @@ interface FirestoreUserProfile {
   nick: string
   appLanguage: string
   learningLanguage: string
+  appTheme?: 'light' | 'dark'
   level?: LearningLevel
   tasksPerSession?: number
   email: string
@@ -54,6 +55,7 @@ const mapFirestoreProfile = (profile: FirestoreUserProfile): UserProfile => {
     nick: profile.nick,
     appLanguage: profile.appLanguage,
     learningLanguage: profile.learningLanguage,
+    appTheme: profile.appTheme ?? 'light',
     level: profile.level ?? DEFAULT_LEARNING_LEVEL,
     tasksPerSession: clampTasksPerSession(profile.tasksPerSession ?? TASKS_PER_SESSION_DEFAULT),
     email: profile.email,
@@ -97,6 +99,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
             nick: getDefaultNicknameFromEmail(authUser.email),
             appLanguage: 'pl',
             learningLanguage: 'en',
+            appTheme: 'light',
             level: DEFAULT_LEARNING_LEVEL,
             tasksPerSession: TASKS_PER_SESSION_DEFAULT,
             email: authUser.email ?? '',
@@ -136,6 +139,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
           nick: payload.nick,
           appLanguage: payload.appLanguage,
           learningLanguage: payload.learningLanguage,
+          appTheme: payload.appTheme,
           level: payload.level,
           tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
         }),
@@ -148,6 +152,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
           nick: payload.nick,
           appLanguage: payload.appLanguage,
           learningLanguage: payload.learningLanguage,
+          appTheme: payload.appTheme,
           level: payload.level,
           tasksPerSession: clampTasksPerSession(payload.tasksPerSession),
         }

@@ -59,7 +59,7 @@ const handleRegister = async () => {
   }
 
   try {
-    await authStore.register(email.value, password.value)
+    await authStore.register(email.value, password.value, username.value)
     snackbarStore.showSuccess(t('register.success') || 'Registration successful. Please check your email to verify your account.')
     await router.push(localePath('/auth/login'))
   }

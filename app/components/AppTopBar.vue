@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { useDisplay, useTheme } from 'vuetify'
 import { useAuthStore } from '../stores/use-auth-store'
+import { useUserProfileStore } from '../stores/use-user-profile-store'
 
 const { t, setLocale, locale } = useI18n()
 const localePath = useLocalePath()
 const theme = useTheme()
 const { smAndDown } = useDisplay()
 const authStore = useAuthStore()
+const userProfileStore = useUserProfileStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -16,6 +18,7 @@ const currentRoutePath = computed(() => route.path)
 const homePath = computed(() => localePath('/'))
 const nextLocale = computed(() => (locale.value === 'pl' ? 'en' : 'pl'))
 const nextLocaleLabel = computed(() => (nextLocale.value === 'pl' ? t('app.switchToPl') : t('app.switchToEn')))
+const currentProfileTheme = computed(() => userProfileStore.profile?.appTheme ?? null)
 
 const loggedOutNavigationItems = computed(() => [
   {
@@ -80,9 +83,22 @@ const mobileNavigationItems = computed(() => {
 const setTheme = (themeName: 'light' | 'dark') => {
   theme.change(themeName)
 
-  if (import.meta.client) {
-    localStorage.setItem('app-theme', themeName)
+  if (!authStore.isAuthenticated || !authStore.user?.uid || !userProfileStore.profile) {
+    if (import.meta.client) {
+      localStorage.setItem('app-theme', themeName)
+    }
+
+    return
   }
+
+  void userProfileStore.updateProfile(authStore.user.uid, {
+    nick: userProfileStore.profile.nick,
+    appLanguage: userProfileStore.profile.appLanguage,
+    learningLanguage: userProfileStore.profile.learningLanguage,
+    appTheme: themeName,
+    level: userProfileStore.profile.level,
+    tasksPerSession: userProfileStore.profile.tasksPerSession,
+  })
 }
 
 const toggleLocale = () => {
@@ -102,6 +118,16 @@ const logout = async () => {
   await router.push(localePath('/auth/login'))
 }
 
+watch(
+  currentProfileTheme,
+  (themeName) => {
+    if (themeName === 'light' || themeName === 'dark') {
+      theme.change(themeName)
+    }
+  },
+  { immediate: true },
+)
+
 onMounted(() => {
   if (!import.meta.client) {
     return
@@ -109,12 +135,6 @@ onMounted(() => {
 
   if (!authStore.initialized) {
     authStore.initAuth()
-  }
-
-  const storedTheme = localStorage.getItem('app-theme')
-
-  if (storedTheme === 'light' || storedTheme === 'dark') {
-    theme.change(storedTheme)
   }
 })
 </script>

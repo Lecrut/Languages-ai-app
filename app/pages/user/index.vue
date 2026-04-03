@@ -5,7 +5,6 @@ import { useResultsStore } from '../../stores/use-results-store'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
 import { useTaskSessionStore } from '../../stores/use-task-session-store'
 import { useUserProfileStore } from '../../stores/use-user-profile-store'
-import { useTaskLoader, type TaskLoadMode } from '../../composables/useTaskLoader'
 import { DEFAULT_LEARNING_LEVEL } from '../../constants/learning-levels'
 import {
   DEFAULT_TASK_TOPIC,
@@ -29,6 +28,7 @@ const taskLoader = useTaskLoader()
 const isResultSaved = ref(false)
 const isStartingSession = ref(false)
 const selectedTopic = ref<TaskTopicId>(DEFAULT_TASK_TOPIC)
+type TaskLoadMode = 'new' | 'improve' | 'repeat' | 'ai'
 const selectedMode = ref<TaskLoadMode | null>(null)
 const { setPageTitle } = usePageHead()
 const isEmailVerified = computed(() => authStore.user?.emailVerified ?? false)
@@ -47,6 +47,8 @@ const languageLabelByCode: Record<string, string> = {
   fr: 'French',
   it: 'Italian',
 }
+
+const preferredSubject = computed(() => languageLabelByCode[userProfileStore.profile?.learningLanguage ?? 'en'] ?? 'English')
 
 const topicOptions = computed(() => TASK_TOPICS.map(topic => ({
   title: t(`play.topics.${topic.id}`),
@@ -107,14 +109,22 @@ const startSessionWithMode = async (mode: TaskLoadMode) => {
       throw new Error('User not logged in')
     }
 
+    if (!profile) {
+      const snackbarStore = useSnackbarStore()
+      snackbarStore.showError('Poczekaj, aż preferencje profilu się załadują, i spróbuj ponownie.')
+      return
+    }
+
     const tasksCount = clampTasksPerSession(profile?.tasksPerSession ?? TASKS_PER_SESSION_DEFAULT)
 
     const tasks = await taskLoader.loadTasks({
       mode,
       tasksCount,
       userId: currentUser.uid,
+      preferredSubject: preferredSubject.value,
+      preferredLevel: profile.level,
       aiPromptParams: {
-        subject: languageLabelByCode[profile?.learningLanguage ?? 'en'] ?? 'English',
+        subject: preferredSubject.value,
         topic: selectedPromptTopic.value,
         level: profile?.level ?? DEFAULT_LEARNING_LEVEL,
       },

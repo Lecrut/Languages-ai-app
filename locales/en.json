@@ -134,7 +134,13 @@
     "flashcardRevealAnswer": "Show answer",
     "flashcardKnown": "I know this",
     "flashcardUnknown": "I don't know this",
-    "flashcardEvaluationTile": "Your assessment"
+    "flashcardEvaluationTile": "Your assessment",
+    "taskInstructions": {
+      "arrangeWords": "Arrange the words in the correct order.",
+      "fillBlankSelect": "Choose the missing word.",
+      "oddOneOut": "Find the word that does not belong.",
+      "multipleChoice": "Choose the correct answer."
+    }
   },
   "results": {
     "title": "Results",

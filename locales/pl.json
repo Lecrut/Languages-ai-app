@@ -134,7 +134,13 @@
     "flashcardRevealAnswer": "Pokaż odpowiedź",
     "flashcardKnown": "Znam to",
     "flashcardUnknown": "Nie znam tego",
-    "flashcardEvaluationTile": "Twoja ocena"
+    "flashcardEvaluationTile": "Twoja ocena",
+    "taskInstructions": {
+      "arrangeWords": "Ułóż słowa we właściwej kolejności.",
+      "fillBlankSelect": "Wybierz brakujące słowo.",
+      "oddOneOut": "Znajdź słowo, które nie pasuje.",
+      "multipleChoice": "Wybierz poprawną odpowiedź."
+    }
   },
   "results": {
     "title": "Wyniki",
