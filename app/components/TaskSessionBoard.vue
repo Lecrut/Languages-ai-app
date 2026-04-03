@@ -56,7 +56,7 @@ const taskHint = computed(() => {
 
   return normalizedHint.length > 0 ? normalizedHint : null
 })
-const questionTypographyClass = computed(() => (mdAndUp.value ? 'text-display-medium' : 'text-headline-small'))
+const questionTypographyClass = computed(() => (mdAndUp.value ? 'text-headline-medium' : 'text-title-large'))
 const taskTypeInstruction = computed(() => {
   switch (props.task?.type) {
     case 'arrange_words':
