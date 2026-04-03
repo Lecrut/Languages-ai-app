@@ -1,7 +1,7 @@
 # Nuxt dev/build outputs
+.firebase
 .output
 .data
-.firebase
 .nuxt
 .nitro
 .cache
