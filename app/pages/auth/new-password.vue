@@ -94,7 +94,11 @@ const handleSetNewPassword = async () => {
 
 <template>
   <VRow class="justify-center">
-    <VCol cols="12" sm="10" md="8" lg="5">
+    <VCol
+      cols="12"
+      sm="10"
+      md="8"
+      lg="5">
       <VCard>
         <VCardTitle class="text-headline-large text-center my-3">{{ t('newPassword.title') }}</VCardTitle>
 
@@ -149,7 +153,11 @@ const handleSetNewPassword = async () => {
 
         <VCardText class="pt-2 pb-4 d-flex flex-column align-center text-center ga-1">
           <div class="text-body-medium">{{ t('newPassword.backToLoginPrompt') }}</div>
-          <VBtn variant="text" size="small" color="secondary" :to="localePath('/auth/login')">
+          <VBtn
+            variant="text"
+            size="small"
+            color="secondary"
+            :to="localePath('/auth/login')">
             {{ t('newPassword.backToLogin') }}
           </VBtn>
         </VCardText>

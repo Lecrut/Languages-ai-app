@@ -1,6 +1,4 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-const isDev = process.env.NODE_ENV !== 'production'
-
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -8,8 +6,8 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Languages AI',
-      titleTemplate: titleChunk => titleChunk ? `${titleChunk} | Languages AI` : 'Languages AI',
+      title: 'Lingai',
+      titleTemplate: '%s | Lingai',
       htmlAttrs: {
         lang: 'pl',
       },
@@ -17,6 +15,22 @@ export default defineNuxtConfig({
         {
           name: 'description',
           content: 'Personalized English learning app with AI generated tasks',
+        },
+      ],
+      link: [
+        {
+          rel: 'icon',
+          type: 'image/png',
+          href: '/images/logo_blue.png',
+        },
+        {
+          rel: 'shortcut icon',
+          type: 'image/png',
+          href: '/images/logo_blue.png',
+        },
+        {
+          rel: 'apple-touch-icon',
+          href: '/images/logo_blue.png',
         },
       ],
     },
@@ -31,7 +45,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxtjs/i18n',
-    ...(isDev ? [] : ['@vite-pwa/nuxt']),
+    '@vite-pwa/nuxt',
     '@nuxtjs/google-fonts',
     '@nuxt/scripts',
     '@nuxt/image',
@@ -47,6 +61,7 @@ export default defineNuxtConfig({
 
   googleFonts: {
     families: {
+      'Open Sans': [400, 600, 700],
       'Plus Jakarta Sans': [400, 500, 600, 700],
     },
     display: 'swap',
@@ -122,26 +137,27 @@ export default defineNuxtConfig({
   },
 
   site: {
-    name: 'Languages AI',
+    name: 'Lingai',
     url: process.env.SITE_URL || 'https://languages-ai.vercel.app',
   },
 
   robots: {
-    rules: {
-      UserAgent: '*',
-      Allow: '/',
-      Disallow: ['/admin'],
-    },
+    groups: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/admin'],
+      },
+    ],
   },
 
   sitemap: {
-    sitemapSize: 50000,
     sources: ['/sitemap.xml'],
   },
 
   runtimeConfig: {
     public: {
-      appName: import.meta.env.APP_NAME || 'Languages AI',
+      appName: import.meta.env.APP_NAME || 'Lingai',
       apiKey: import.meta.env.apiKey,
       authDomain: import.meta.env.authDomain,
       projectId: import.meta.env.projectId,

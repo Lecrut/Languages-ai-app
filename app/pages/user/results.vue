@@ -46,7 +46,6 @@ const orderedTasks = computed(() => {
 
   return [...selectedSession.value.tasks].sort((firstTask, secondTask) => Number(secondTask.isPassed) - Number(firstTask.isPassed))
 })
-const desktopResultsStyle = computed(() => (lgAndUp.value ? { height: 'calc(100dvh - 112px)' } : undefined))
 
 const openSessionDetails = (sessionId: string) => {
   if (selectedSessionId.value === sessionId) {
@@ -102,7 +101,10 @@ watch(
 </script>
 
 <template>
-  <div class="results-board" :class="{ 'results-board--desktop': lgAndUp }">
+  <div
+    class="results-board"
+    :class="{ 'results-board--desktop': lgAndUp }"
+  >
     <VCard class="results-panel results-panel--stats results-panel--stats-card">
       <VCardTitle class="text-headline-small">{{ t('results.statsTitle') }}</VCardTitle>
       <VCardText class="results-panel__body d-flex flex-column ga-4">
@@ -116,11 +118,18 @@ watch(
           <span class="text-headline-small">{{ summaryAccuracy }}%</span>
         </VProgressCircular>
 
-        <VAlert type="success" variant="tonal" prepend-icon="mdi-check">
+        <VAlert
+          type="success"
+          variant="tonal"
+          prepend-icon="mdi-check"
+        >
           {{ t('results.correctCount', { count: summaryCorrectCount }) }}
         </VAlert>
 
-        <VAlert type="info" variant="tonal">
+        <VAlert
+          type="info"
+          variant="tonal"
+        >
           {{ t('results.averageCorrectPerSession', { count: averageCorrectPerSession }) }}
         </VAlert>
 
@@ -137,8 +146,14 @@ watch(
       </VCardText>
 
       <div class="results-panel__body px-6 pb-6">
-        <div v-if="!resultsStore.sessions.length" class="mt-2">
-          <VAlert type="info" variant="tonal">
+        <div
+          v-if="!resultsStore.sessions.length"
+          class="mt-2"
+        >
+          <VAlert
+            type="info"
+            variant="tonal"
+          >
             {{ t('results.empty') }}
           </VAlert>
         </div>
@@ -153,16 +168,27 @@ watch(
           <VCardText class="d-flex flex-column ga-3 py-3">
             <div class="d-flex align-center justify-space-between flex-wrap ga-2">
               <span class="text-body-large">{{ formatDateTime(session.date, locale) }}</span>
-              <VChip color="primary" variant="tonal">
+              <VChip
+                color="primary"
+                variant="tonal"
+              >
                 {{ t('results.sessionTasks', { count: session.totalTasks }) }}
               </VChip>
             </div>
 
             <div class="d-flex ga-2 flex-wrap">
-              <VChip color="success" variant="flat" prepend-icon="mdi-check">
+              <VChip
+                color="success"
+                variant="flat"
+                prepend-icon="mdi-check"
+              >
                 {{ t('results.correctCount', { count: session.correctCount }) }}
               </VChip>
-              <VChip color="error" variant="flat" prepend-icon="mdi-close">
+              <VChip
+                color="error"
+                variant="flat"
+                prepend-icon="mdi-close"
+              >
                 {{ t('results.incorrectCount', { count: session.incorrectCount }) }}
               </VChip>
             </div>
@@ -182,10 +208,16 @@ watch(
       </div>
     </VCard>
 
-    <VCard v-if="lgAndUp" class="results-panel results-panel--details">
+    <VCard
+      v-if="lgAndUp"
+      class="results-panel results-panel--details"
+    >
       <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
 
-      <div v-if="selectedSession" class="results-panel__body px-6 pb-6">
+      <div
+        v-if="selectedSession"
+        class="results-panel__body px-6 pb-6"
+      >
         <div class="text-body-medium text-medium-emphasis mb-3">
           {{ formatDateTime(selectedSession.date, locale) }}
         </div>
@@ -219,18 +251,31 @@ watch(
         </VRow>
       </div>
 
-      <VCardText v-else class="results-panel__body px-6 pb-6 d-flex align-start">
-        <VAlert type="info" variant="tonal" class="w-100">
+      <VCardText
+        v-else
+        class="results-panel__body px-6 pb-6 d-flex align-start"
+      >
+        <VAlert
+          type="info"
+          variant="tonal"
+          class="w-100"
+        >
           {{ t('results.selectSession') }}
         </VAlert>
       </VCardText>
     </VCard>
 
     <ClientOnly>
-      <VDialog v-model="detailsDialogVisible" max-width="720">
+      <VDialog
+        v-model="detailsDialogVisible"
+        max-width="720"
+      >
         <VCard>
           <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
-          <VCardText v-if="selectedSession" class="d-flex flex-column ga-3">
+          <VCardText
+            v-if="selectedSession"
+            class="d-flex flex-column ga-3"
+          >
             <p class="text-body-medium text-medium-emphasis mb-0">
               {{ formatDateTime(selectedSession.date, locale) }}
             </p>
@@ -257,7 +302,10 @@ watch(
           </VCardText>
           <VCardActions>
             <VSpacer />
-            <VBtn variant="text" @click="detailsDialogVisible = false">
+            <VBtn
+              variant="text"
+              @click="detailsDialogVisible = false"
+            >
               {{ t('results.close') }}
             </VBtn>
           </VCardActions>

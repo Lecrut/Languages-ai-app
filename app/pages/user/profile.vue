@@ -137,7 +137,10 @@ const handleSaveProfile = async () => {
 
 <template>
   <VRow justify="center">
-    <VCol cols="12" md="10" lg="7">
+    <VCol
+      cols="12"
+      md="10"
+      lg="7">
       <VCard class="pa-2 pa-sm-4 pa-md-6">
         <VCardTitle class="text-headline-large text-center my-3">{{ t('profile.title') }}</VCardTitle>
 

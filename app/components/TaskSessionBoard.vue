@@ -178,27 +178,54 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
 </script>
 
 <template>
-  <VCard class="mx-auto" max-width="1200">
+  <VCard
+    class="mx-auto"
+    max-width="1200">
     <VCardText class="pa-3 pa-sm-4 pa-md-6">
-      <VRow v-if="!completed" class="mb-3" align="center" justify="space-between" no-gutters>
-        <VCol cols="12" md="6" class="mb-2 mb-md-0">
-          <VChip color="primary" variant="flat" size="large">
+      <VRow
+        v-if="!completed"
+        class="mb-3"
+        align="center"
+        justify="space-between"
+        no-gutters>
+        <VCol
+          cols="12"
+          md="6"
+          class="mb-2 mb-md-0">
+          <VChip
+            color="primary"
+            variant="flat"
+            size="large">
             {{ $t('play.taskProgress', { current: taskNumber, total: totalTasks }) }}
           </VChip>
         </VCol>
-        <VCol cols="12" md="6" class="d-flex justify-md-end ga-2 flex-wrap">
-          <VChip color="success" variant="tonal">
+        <VCol
+          cols="12"
+          md="6"
+          class="d-flex justify-md-end ga-2 flex-wrap">
+          <VChip
+            color="success"
+            variant="tonal">
             {{ $t('play.correctCount', { count: correctCount }) }}
           </VChip>
-          <VChip color="error" variant="tonal">
+          <VChip
+            color="error"
+            variant="tonal">
             {{ $t('play.incorrectCount', { count: incorrectCount }) }}
           </VChip>
         </VCol>
       </VRow>
 
-      <VRow v-if="completed" class="justify-center">
-        <VCol cols="12" md="8" lg="6">
-          <VCard variant="tonal" class="mb-4">
+      <VRow
+        v-if="completed"
+        class="justify-center">
+        <VCol
+          cols="12"
+          md="8"
+          lg="6">
+          <VCard
+            variant="tonal"
+            class="mb-4">
             <VCardTitle>{{ $t('play.summaryTitle') }}</VCardTitle>
             <VCardText class="d-flex flex-column align-center ga-4">
               <VProgressCircular
@@ -211,10 +238,16 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
               </VProgressCircular>
 
               <div class="d-flex ga-3 flex-wrap justify-center">
-                <VChip color="success" variant="flat" size="large">
+                <VChip
+                  color="success"
+                  variant="flat"
+                  size="large">
                   {{ $t('play.correctCount', { count: correctCount }) }}
                 </VChip>
-                <VChip color="error" variant="flat" size="large">
+                <VChip
+                  color="error"
+                  variant="flat"
+                  size="large">
                   {{ $t('play.incorrectCount', { count: incorrectCount }) }}
                 </VChip>
               </div>
@@ -238,17 +271,28 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
         <VCol cols="12">
           <div class="px-1 px-md-2 pb-2 pb-md-4">
             <div class="d-flex flex-wrap ga-2 mb-2">
-              <VChip size="small" variant="tonal" color="primary">
+              <VChip
+                size="small"
+                variant="tonal"
+                color="primary">
                 {{ task?.targetLanguage ?? task?.subject }}
               </VChip>
-              <VChip size="small" variant="tonal" color="secondary">
+              <VChip
+                size="small"
+                variant="tonal"
+                color="secondary">
                 {{ task?.level }}
               </VChip>
-              <VChip size="small" variant="tonal" color="info">
+              <VChip
+                size="small"
+                variant="tonal"
+                color="info">
                 {{ task?.topic }}
               </VChip>
             </div>
-            <div v-if="taskTypeInstruction" class="text-body-medium text-medium-emphasis font-italic my-4">
+            <div
+              v-if="taskTypeInstruction"
+              class="text-body-medium text-medium-emphasis font-italic my-4">
               {{ taskTypeInstruction }}
             </div>
             <div class="d-flex align-start ga-2">
@@ -282,7 +326,9 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
             class="pa-3 pa-sm-4 pa-md-6 rounded-lg"
             color="surface"
           >
-            <div v-if="isArrangeTask && !isAnswered" class="d-flex flex-column ga-4">
+            <div
+              v-if="isArrangeTask && !isAnswered"
+              class="d-flex flex-column ga-4">
               <div class="d-flex ga-2 flex-wrap justify-center min-h-25">
                 <VChip
                   v-for="(word, index) in selectedArrangeWords"
@@ -336,7 +382,9 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
               </div>
             </div>
 
-            <VRow v-else-if="!isAnswered" density="compact">
+            <VRow
+              v-else-if="!isAnswered"
+              density="compact">
               <VCol
                 v-for="(option, optionIndex) in task?.options"
                 :key="`${option}-${optionIndex}`"
@@ -356,8 +404,12 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
               </VCol>
             </VRow>
 
-            <div v-if="isAnswered" class="d-flex flex-column ga-3">
-              <VCard variant="flat" color="success">
+            <div
+              v-if="isAnswered"
+              class="d-flex flex-column ga-3">
+              <VCard
+                variant="flat"
+                color="success">
                 <VCardText class="d-flex align-center justify-space-between ga-2">
                   <div class="d-flex align-center ga-2">
                     <VIcon icon="mdi-check" />
@@ -389,7 +441,10 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
                 </VCardText>
               </VCard>
 
-              <VCard v-if="showSelectedAnswerTile" variant="flat" color="error">
+              <VCard
+                v-if="showSelectedAnswerTile"
+                variant="flat"
+                color="error">
                 <VCardText class="d-flex align-center justify-space-between ga-2">
                   <div class="d-flex align-center ga-2">
                     <VIcon icon="mdi-close" />

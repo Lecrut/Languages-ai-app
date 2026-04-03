@@ -54,7 +54,7 @@ export function useTaskLoader() {
       if (isPassed !== null) {
         constraints.push(where('isPassed', '==', isPassed))
       }
-      constraints.push(limit(1000)) 
+      constraints.push(limit(1000))
 
       const q = query(resultsCollection, ...constraints)
       const snapshot = await getDocs(q)

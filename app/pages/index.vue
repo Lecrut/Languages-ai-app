@@ -13,9 +13,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <VRow class="justify-center align-center" style="min-height: 70vh;">
-    <VCol cols="12" sm="11" md="9" lg="7" xl="6">
-      <VCard rounded="xl" elevation="10">
+  <VRow
+    class="justify-center align-center"
+    style="min-height: 70vh;">
+    <VCol
+      cols="12"
+      sm="11"
+      md="9"
+      lg="7"
+      xl="6">
+      <VCard
+        rounded="xl"
+        elevation="10">
         <VImg
           src="/images/socrates.png"
           :alt="t('home.imageAlt')"
@@ -26,7 +35,10 @@ onMounted(() => {
         >
           <template #error>
             <div class="d-flex align-center justify-center h-100 bg-primary">
-              <VIcon icon="mdi-image-off-outline" size="44" color="white" />
+              <VIcon
+                icon="mdi-image-off-outline"
+                size="44"
+                color="white" />
             </div>
           </template>
         </VImg>
@@ -37,7 +49,11 @@ onMounted(() => {
           </blockquote>
           <div class="text-body-large text-medium-emphasis mb-8">~ {{ t('home.author') }}</div>
 
-          <VBtn color="primary" size="large" class="px-10" :to="localePath('/auth/login')">
+          <VBtn
+            color="primary"
+            size="large"
+            class="px-10"
+            :to="localePath('/auth/login')">
             {{ t('home.cta') }}
           </VBtn>
         </VCardText>

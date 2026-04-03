@@ -67,12 +67,22 @@ const handleLogin = async () => {
 
 <template>
   <VRow class="justify-center">
-    <VCol cols="12" sm="10" md="8" lg="5">
+    <VCol
+      cols="12"
+      sm="10"
+      md="8"
+      lg="5">
       <VCard>
         <VCardTitle class="text-headline-large text-center my-3">{{ t('login.title') }}</VCardTitle>
         <VForm @submit.prevent="handleLogin">
           <VCardText>
-            <VTextField v-model="email" :label="t('login.email')" :rules="emailRules" type="email" variant="outlined" class="mb-3" />
+            <VTextField
+              v-model="email"
+              :label="t('login.email')"
+              :rules="emailRules"
+              type="email"
+              variant="outlined"
+              class="mb-3" />
             <VTextField
               v-model="password"
               :label="t('login.password')"
@@ -99,12 +109,20 @@ const handleLogin = async () => {
 
         <VCardText class="pt-2 pb-4 d-flex flex-column align-center text-center ga-1">
           <div class="text-body-medium">{{ t('login.noAccount') }}</div>
-          <VBtn variant="text" size="small" color="secondary" :to="localePath('/auth/register')">
+          <VBtn
+            variant="text"
+            size="small"
+            color="secondary"
+            :to="localePath('/auth/register')">
             {{ t('login.registerNow') }}
           </VBtn>
 
           <div class="text-body-medium mt-2">{{ t('login.forgotPasswordPrompt') }}</div>
-          <VBtn variant="text" size="small" color="secondary" :to="localePath('/auth/reset-password')">
+          <VBtn
+            variant="text"
+            size="small"
+            color="secondary"
+            :to="localePath('/auth/reset-password')">
             {{ t('login.resetPassword') }}
           </VBtn>
         </VCardText>

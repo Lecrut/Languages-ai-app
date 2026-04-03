@@ -203,8 +203,15 @@ watch(
 
 <template>
   <VRow class="justify-center">
-    <VCol cols="12" sm="11" md="10" lg="9" xl="8">
-      <VCard v-if="!isEmailVerified" class="elevation-8">
+    <VCol
+      cols="12"
+      sm="11"
+      md="10"
+      lg="9"
+      xl="8">
+      <VCard
+        v-if="!isEmailVerified"
+        class="elevation-8">
         <VCardText class="pt-8 text-center">
           <VCardTitle class="text-headline-large mb-4">{{ t('auth.verifyEmailTitle') || 'Verify your email address' }}</VCardTitle>
 
@@ -227,7 +234,9 @@ watch(
         </VCardText>
       </VCard>
 
-      <VCard v-else-if="!taskSessionStore.started" class="elevation-8">
+      <VCard
+        v-else-if="!taskSessionStore.started"
+        class="elevation-8">
         <template v-if="taskSessionStore.hasRecoverableSession">
           <VCardText class="pt-8 text-center">
             <VCardTitle class="text-headline-large mb-4">{{ t('play.resumeTitle') }}</VCardTitle>
@@ -243,7 +252,9 @@ watch(
           </VCardText>
         </template>
 
-        <VCardText v-else class="pt-8">
+        <VCardText
+          v-else
+          class="pt-8">
           <VCardTitle class="text-headline-large mb-2 text-center">{{ t('play.title') }}</VCardTitle>
           <!-- <p class="text-body-large mb-6 text-center text-medium-emphasis">{{ t('play.description') }}</p> -->
 
@@ -284,7 +295,9 @@ watch(
                   @click="startSessionWithMode(option.mode)"
                 >
                   <VCardText class="d-flex flex-column align-center text-center gap-2 pa-4">
-                    <VIcon size="32" :icon="option.icon" />
+                    <VIcon
+                      size="32"
+                      :icon="option.icon" />
                     <p class="text-body-large font-weight-bold">{{ option.label }}</p>
                     <p class="text-body-small text-medium-emphasis">{{ option.description }}</p>
                   </VCardText>

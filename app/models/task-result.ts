@@ -13,5 +13,5 @@ export interface TaskResult {
 
 export interface SaveTaskResultPayload {
   isPassed: boolean
-  lastAttempt: unknown 
+  lastAttempt: unknown
 }

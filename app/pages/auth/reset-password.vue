@@ -54,7 +54,11 @@ const handleResetPassword = async () => {
 
 <template>
   <VRow class="justify-center">
-    <VCol cols="12" sm="10" md="8" lg="5">
+    <VCol
+      cols="12"
+      sm="10"
+      md="8"
+      lg="5">
       <VCard>
         <VCardTitle class="text-headline-large text-center my-3">{{ t('resetPassword.title') }}</VCardTitle>
 
@@ -86,7 +90,11 @@ const handleResetPassword = async () => {
 
         <VCardText class="pt-2 pb-4 d-flex flex-column align-center text-center ga-1">
           <div class="text-body-medium">{{ t('resetPassword.haveAccount') }}</div>
-          <VBtn variant="text" size="small" color="secondary" :to="localePath('/auth/login')">
+          <VBtn
+            variant="text"
+            size="small"
+            color="secondary"
+            :to="localePath('/auth/login')">
             {{ t('resetPassword.backToLogin') }}
           </VBtn>
         </VCardText>

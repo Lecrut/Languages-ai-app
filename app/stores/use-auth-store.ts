@@ -155,7 +155,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      
+
       const userDocRef = doc(db, FIREBASE_COLLECTIONS.users, userCredential.user.uid)
       await setDoc(userDocRef, {
         uid: userCredential.user.uid,
@@ -168,9 +168,9 @@ export const useAuthStore = defineStore('auth', () => {
         email: userCredential.user.email ?? '',
         createdAt: serverTimestamp(),
       })
-      
+
       await sendEmailVerification(userCredential.user)
-      
+
       await signOut(auth)
       user.value = null
       userProfileStore.reset()

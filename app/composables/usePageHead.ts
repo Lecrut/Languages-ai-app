@@ -1,5 +1,5 @@
 export const usePageHead = () => {
-  const appName = 'Languages AI'
+  const appName = 'Lingai'
 
   const buildFullTitle = (title: string) => `${title} | ${appName}`
 

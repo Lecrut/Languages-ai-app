@@ -17,7 +17,9 @@ const sharedStore = useSharedStore()
     <AppSnackbar />
 
     <VMain class="position-relative">
-      <VContainer :fluid="isResultsRoute" :class="contentContainerClass">
+      <VContainer
+        :fluid="isResultsRoute"
+        :class="contentContainerClass">
         <slot />
       </VContainer>
 
@@ -27,7 +29,11 @@ const sharedStore = useSharedStore()
         contained
         persistent
       >
-        <VProgressCircular indeterminate color="primary" :size="104" :width="8" />
+        <VProgressCircular
+          indeterminate
+          color="primary"
+          :size="104"
+          :width="8" />
       </VOverlay>
     </VMain>
   </div>

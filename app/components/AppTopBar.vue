@@ -140,14 +140,27 @@ onMounted(() => {
 </script>
 
 <template>
-  <VAppBar color="primary" rounded="0">
+  <VAppBar
+    color="primary"
+    rounded="0">
     <VContainer class="d-flex align-center justify-space-between">
       <VBtn
         variant="text"
         class="font-weight-bold text-body-large px-0 text-none"
         @click="navigateHome"
       >
-        {{ t('app.title') }}
+        <VAvatar
+          size="40"
+          rounded="0"
+          class="me-2 bg-transparent"
+        >
+          <VImg
+            src="/images/logo.png"
+            alt="Lingai logo"
+            class="bg-transparent"
+          />
+        </VAvatar>
+        <span style="font-family: 'Open Sans', sans-serif;">{{ t('app.title') }}</span>
       </VBtn>
       <div class="d-flex ga-2">
         <template v-if="!smAndDown">
