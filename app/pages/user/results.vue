@@ -51,7 +51,6 @@ const formatStreakDate = (date: Date | undefined) => {
   }).format(date)
 }
 
-const currentStreakCount = computed(() => streakInfoStore.streakInfo?.currentCount ?? 0)
 const longestStreakCount = computed(() => streakInfoStore.streakInfo?.longestCount ?? 0)
 const longestStreakRangeLabel = computed(() => t('results.streakRange', {
   from: formatStreakDate(streakInfoStore.streakInfo?.longest.from),
@@ -152,7 +151,7 @@ watch(
           {{ t('results.averageCorrectPerSession', { count: averageCorrectPerSession }) }}
         </VAlert>
 
-        <p class="text-body-medium text-medium-emphasis mb-0">
+        <p class="text-body-medium text-medium-emphasis my-0">
           {{ t('results.statsInfo') }}
         </p>
 
@@ -160,14 +159,6 @@ watch(
           variant="tonal"
           color="error"
           icon="mdi-fire"
-        >
-          {{ t('results.currentStreak', { count: currentStreakCount }) }}
-        </VAlert>
-
-        <VAlert
-          type="warning"
-          variant="tonal"
-          prepend-icon="mdi-trophy-outline"
         >
           {{ t('results.longestStreak', { count: longestStreakCount }) }}
           <div class="text-caption mt-1">
