@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { formatDateTime } from '../../helpers/format-date'
+import { getDisplayCurrentStreakCount } from '../../models/streak-info'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useResultsStore } from '../../stores/use-results-store'
 import { useStreakInfoStore } from '../../stores/use-streak-info-store'
@@ -51,6 +52,7 @@ const formatStreakDate = (date: Date | undefined) => {
   }).format(date)
 }
 
+const currentStreakCount = computed(() => getDisplayCurrentStreakCount(streakInfoStore.streakInfo))
 const longestStreakCount = computed(() => streakInfoStore.streakInfo?.longestCount ?? 0)
 const longestStreakRangeLabel = computed(() => t('results.streakRange', {
   from: formatStreakDate(streakInfoStore.streakInfo?.longest.from),

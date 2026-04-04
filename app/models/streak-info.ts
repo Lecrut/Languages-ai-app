@@ -43,12 +43,6 @@ const toDate = (value: Timestamp | Date | undefined) => {
   return new Date()
 }
 
-const createYesterdayDate = () => {
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  return yesterday
-}
-
 const isSameDay = (left: Date, right: Date) => {
   return left.getFullYear() === right.getFullYear()
     && left.getMonth() === right.getMonth()
@@ -61,36 +55,63 @@ const isNextDay = (left: Date, right: Date) => {
   return isSameDay(nextDay, right)
 }
 
+const toUtcDayTimestamp = (date: Date) => {
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+const getDayDistance = (from: Date, to: Date) => {
+  const millisecondsPerDay = 24 * 60 * 60 * 1000
+
+  return Math.floor((toUtcDayTimestamp(to) - toUtcDayTimestamp(from)) / millisecondsPerDay)
+}
+
+export const getDisplayCurrentStreakCount = (
+  streakInfo: StreakInfo | null,
+  referenceDate = new Date(),
+) => {
+  if (!streakInfo || streakInfo.currentCount <= 0) {
+    return 0
+  }
+
+  const daysSinceLastCompletion = getDayDistance(streakInfo.actual.to, referenceDate)
+
+  if (daysSinceLastCompletion <= 1) {
+    return streakInfo.currentCount
+  }
+
+  return 0
+}
+
 export const createDefaultStreakInfo = (): StreakInfo => {
-  const yesterday = createYesterdayDate()
+  const today = new Date()
 
   return {
     currentCount: 0,
     longestCount: 0,
     actual: {
-      from: new Date(yesterday),
-      to: new Date(yesterday),
+      from: new Date(today),
+      to: new Date(today),
     },
     longest: {
-      from: new Date(yesterday),
-      to: new Date(yesterday),
+      from: new Date(today),
+      to: new Date(today),
     },
   }
 }
 
 export const createDefaultFirestoreStreakInfo = (): FirestoreStreakInfo => {
-  const yesterday = createYesterdayDate()
+  const today = new Date()
 
   return {
     currentCount: 0,
     longestCount: 0,
     actual: {
-      from: new Date(yesterday),
-      to: new Date(yesterday),
+      from: new Date(today),
+      to: new Date(today),
     },
     longest: {
-      from: new Date(yesterday),
-      to: new Date(yesterday),
+      from: new Date(today),
+      to: new Date(today),
     },
   }
 }
@@ -115,6 +136,32 @@ export const applyStreakCompletion = (
   completedAt = new Date(),
 ): StreakCompletionResult => {
   const completedDay = new Date(completedAt)
+
+  if (currentStreakInfo.currentCount <= 0) {
+    const shouldUpdateLongest = currentStreakInfo.longestCount < 1
+
+    return {
+      streakInfo: {
+        currentCount: 1,
+        longestCount: shouldUpdateLongest ? 1 : currentStreakInfo.longestCount,
+        actual: {
+          from: completedDay,
+          to: completedDay,
+        },
+        longest: shouldUpdateLongest
+          ? {
+              from: completedDay,
+              to: completedDay,
+            }
+          : {
+              from: new Date(currentStreakInfo.longest.from),
+              to: new Date(currentStreakInfo.longest.to),
+            },
+      },
+      shouldPersist: true,
+    }
+  }
+
   const actualTo = new Date(currentStreakInfo.actual.to)
 
   if (isSameDay(actualTo, completedDay)) {

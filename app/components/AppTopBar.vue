@@ -3,6 +3,7 @@ import { useDisplay, useTheme } from 'vuetify'
 import { useAuthStore } from '../stores/use-auth-store'
 import { useStreakInfoStore } from '../stores/use-streak-info-store'
 import { useUserProfileStore } from '../stores/use-user-profile-store'
+import { getDisplayCurrentStreakCount } from '../models/streak-info'
 
 const { t, setLocale, locale } = useI18n()
 const localePath = useLocalePath()
@@ -21,7 +22,7 @@ const homePath = computed(() => localePath('/'))
 const nextLocale = computed(() => (locale.value === 'pl' ? 'en' : 'pl'))
 const nextLocaleLabel = computed(() => (nextLocale.value === 'pl' ? t('app.switchToPl') : t('app.switchToEn')))
 const currentProfileTheme = computed(() => userProfileStore.profile?.appTheme ?? null)
-const currentStreakCount = computed(() => streakInfoStore.streakInfo?.currentCount ?? 0)
+const currentStreakCount = computed(() => getDisplayCurrentStreakCount(streakInfoStore.streakInfo))
 const currentStreakLabel = computed(() => t('app.streakCurrent', {
   current: currentStreakCount.value,
 }))
