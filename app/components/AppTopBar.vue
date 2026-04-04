@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDisplay, useTheme } from 'vuetify'
 import { useAuthStore } from '../stores/use-auth-store'
+import { useStreakInfoStore } from '../stores/use-streak-info-store'
 import { useUserProfileStore } from '../stores/use-user-profile-store'
 
 const { t, setLocale, locale } = useI18n()
@@ -8,6 +9,7 @@ const localePath = useLocalePath()
 const theme = useTheme()
 const { smAndDown } = useDisplay()
 const authStore = useAuthStore()
+const streakInfoStore = useStreakInfoStore()
 const userProfileStore = useUserProfileStore()
 const route = useRoute()
 const router = useRouter()
@@ -19,6 +21,10 @@ const homePath = computed(() => localePath('/'))
 const nextLocale = computed(() => (locale.value === 'pl' ? 'en' : 'pl'))
 const nextLocaleLabel = computed(() => (nextLocale.value === 'pl' ? t('app.switchToPl') : t('app.switchToEn')))
 const currentProfileTheme = computed(() => userProfileStore.profile?.appTheme ?? null)
+const currentStreakCount = computed(() => streakInfoStore.streakInfo?.currentCount ?? 0)
+const currentStreakLabel = computed(() => t('app.streakCurrent', {
+  current: currentStreakCount.value,
+}))
 
 const loggedOutNavigationItems = computed(() => [
   {
@@ -162,8 +168,66 @@ onMounted(() => {
         </VAvatar>
         <span style="font-family: 'Open Sans', sans-serif;">{{ t('app.title') }}</span>
       </VBtn>
-      <div class="d-flex ga-2">
-        <template v-if="!smAndDown">
+
+      <template v-if="smAndDown">
+        <div class="d-flex align-center ga-2">
+          <VChip
+            v-if="isAuthenticated"
+            color="warning"
+            variant="flat"
+            prepend-icon="mdi-fire"
+          >
+            {{ currentStreakLabel }}
+          </VChip>
+
+          <VBtn
+            v-if="!isAuthenticated"
+            size="small"
+            variant="outlined"
+            class="border-md"
+            prepend-icon="mdi-login"
+            :to="localePath('/auth/login')"
+          >
+            {{ t('nav.login') }}
+          </VBtn>
+
+          <VBtn
+            v-if="!isAuthenticated"
+            size="small"
+            variant="outlined"
+            class="border-md"
+            :prepend-icon="isDarkTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny'"
+            @click="setTheme(isDarkTheme ? 'light' : 'dark')"
+          >
+            {{ isDarkTheme ? t('app.themeDark') : t('app.themeLight') }}
+          </VBtn>
+
+          <VBtn
+            v-if="!isAuthenticated"
+            size="small"
+            variant="outlined"
+            class="border-md"
+            prepend-icon="mdi-translate"
+            @click="toggleLocale"
+          >
+            {{ nextLocaleLabel }}
+          </VBtn>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="d-flex flex-grow-1 justify-center px-4">
+          <VChip
+            v-if="isAuthenticated"
+            color="warning"
+            variant="flat"
+            prepend-icon="mdi-fire"
+          >
+            {{ currentStreakLabel }}
+          </VChip>
+        </div>
+
+        <div class="d-flex ga-2 align-center">
           <template v-if="isAuthenticated">
             <VBtn
               v-for="item in navigationItems"
@@ -194,29 +258,8 @@ onMounted(() => {
           >
             {{ t('nav.login') }}
           </VBtn>
-        </template>
-
-        <VBtn
-          v-if="!isAuthenticated"
-          size="small"
-          variant="outlined"
-          class="border-md"
-          :prepend-icon="isDarkTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny'"
-          @click="setTheme(isDarkTheme ? 'light' : 'dark')"
-        >
-          {{ isDarkTheme ? t('app.themeDark') : t('app.themeLight') }}
-        </VBtn>
-        <VBtn
-          v-if="!isAuthenticated"
-          size="small"
-          variant="outlined"
-          class="border-md"
-          prepend-icon="mdi-translate"
-          @click="toggleLocale"
-        >
-          {{ nextLocaleLabel }}
-        </VBtn>
-      </div>
+        </div>
+      </template>
     </VContainer>
   </VAppBar>
 

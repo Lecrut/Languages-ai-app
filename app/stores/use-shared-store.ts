@@ -1,9 +1,11 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
+import { useSnackbarStore } from './use-snackbar-store'
 
 export const useSharedStore = defineStore('shared', () => {
   const pendingRequests = ref(0)
   const error = ref<string | null>(null)
+  const snackbarStore = useSnackbarStore()
 
   const loading = computed(() => pendingRequests.value > 0)
 
@@ -17,6 +19,7 @@ export const useSharedStore = defineStore('shared', () => {
 
   const setError = (message: string) => {
     error.value = message
+    snackbarStore.showError(message)
   }
 
   const clearError = () => {

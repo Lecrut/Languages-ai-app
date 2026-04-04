@@ -86,8 +86,14 @@ watch(
 )
 
 const canSaveProfile = computed(() => Boolean(profile.value) && Boolean(nick.value.trim()) && Boolean(authStore.user?.uid))
+const isEmailVerified = computed(() => authStore.user?.emailVerified === true)
 
 const startEditing = () => {
+  if (!isEmailVerified.value) {
+    snackbarStore.showError(t('auth.verifyEmailDescription'))
+    return
+  }
+
   if (!profile.value) {
     return
   }
@@ -105,6 +111,11 @@ const cancelEditing = () => {
 }
 
 const handleSaveProfile = async () => {
+  if (!isEmailVerified.value) {
+    snackbarStore.showError(t('auth.verifyEmailDescription'))
+    return
+  }
+
   const uid = authStore.user?.uid
   if (!uid) {
     return
@@ -145,14 +156,6 @@ const handleSaveProfile = async () => {
         <VCardTitle class="text-headline-large text-center my-3">{{ t('profile.title') }}</VCardTitle>
 
         <VCardText class="d-flex flex-column ga-4">
-          <VAlert
-            v-if="userProfileStore.error"
-            type="error"
-            variant="tonal"
-          >
-            {{ userProfileStore.error }}
-          </VAlert>
-
           <VTextField
             :model-value="authStore.user?.email ?? profile?.email ?? '-'"
             :label="t('profile.email')"
@@ -269,7 +272,7 @@ const handleSaveProfile = async () => {
             color="primary"
             size="large"
             class="px-10"
-            :disabled="!profile || userProfileStore.loading"
+            :disabled="!profile || userProfileStore.loading || !isEmailVerified"
             @click="startEditing"
           >
             {{ t('profile.edit') }}

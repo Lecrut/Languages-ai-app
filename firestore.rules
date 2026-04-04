@@ -1,0 +1,79 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function userDocRef(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    // users/{uid} - profil użytkownika
+    match /users/{uid} {
+      // Odczyt tylko własnego profilu, po weryfikacji maila
+      allow read: if isOwner(uid) && isVerifiedEmail();
+
+      // Tworzenie profilu: tylko własny uid, tylko raz.
+      // Ten wyjątek pozwala przejść flow register -> create user doc (przed verify).
+      allow create: if isOwner(uid)
+        && !exists(userDocRef(uid))
+        && request.resource.data.uid == uid;
+
+      // Aktualizacja/usunięcie profilu: tylko owner + zweryfikowany mail
+      allow update, delete: if isOwner(uid) && isVerifiedEmail();
+
+      // users/{uid}/results/{taskId} - status per task
+      match /results/{taskId} {
+        allow read, write: if isOwner(uid) && isVerifiedEmail();
+      }
+    }
+
+    // tasks/{taskId} - bank zadań
+    match /tasks/{taskId} {
+      allow read, write: if isVerifiedEmail();
+    }
+
+    // results/{resultId} - sesje wyników
+    match /results/{resultId} {
+      // Odczyt tylko własnych wyników
+      allow read: if isVerifiedEmail()
+        && resource.data.userReference == userDocRef(request.auth.uid);
+
+      // Zapis tylko z userReference wskazującym na zalogowanego usera
+      allow create: if isVerifiedEmail()
+        && request.resource.data.userReference == userDocRef(request.auth.uid);
+
+      // Opcjonalnie: brak edycji/usuwania sesji (immutable log)
+      allow update, delete: if false;
+    }
+
+    // streak/{uid} - aktualna i najdłuższa passa użytkownika
+    match /streak/{uid} {
+      // Odczyt passy tylko dla właściciela po weryfikacji maila
+      allow read: if isOwner(uid) && isVerifiedEmail();
+
+      // Tworzenie dokumentu passy przy rejestracji (przed verify)
+      allow create: if isOwner(uid)
+        && !exists(/databases/$(database)/documents/streak/$(uid));
+
+      // Dalsze zmiany tylko owner + zweryfikowany mail
+      allow update, delete: if isOwner(uid) && isVerifiedEmail();
+    }
+
+    // Domyślnie blokuj wszystko inne
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

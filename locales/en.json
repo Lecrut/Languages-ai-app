@@ -4,7 +4,9 @@
     "switchToPl": "PL",
     "switchToEn": "EN",
     "themeLight": "Light",
-    "themeDark": "Dark"
+    "themeDark": "Dark",
+    "streakCurrent": "Streak: {current}",
+    "streakSummary": "Streak: {current} / {longest}"
   },
   "nav": {
     "home": "Home",
@@ -151,6 +153,9 @@
     "correctCount": "Correct: {count}",
     "incorrectCount": "Incorrect: {count}",
     "averageCorrectPerSession": "Average correct per session: {count}",
+    "currentStreak": "Streak {count} days",
+    "longestStreak": "Longest streak {count} days",
+    "streakRange": "From {from} to {to}",
     "sessionTasks": "Tasks: {count}",
     "loadMore": "Load more",
     "empty": "No saved sessions yet.",

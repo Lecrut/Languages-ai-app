@@ -10,6 +10,7 @@ import type { TaskDocument } from '../models/task.types'
 import type { ResultTaskPayload } from '../models/result'
 import { normalizeAnswer } from '../helpers/normalize-answer'
 import { useFirebase } from '../composables/useFirebase'
+import { useSnackbarStore } from './use-snackbar-store'
 import { useUserProfileStore } from './use-user-profile-store'
 
 export interface TaskSessionTask extends Omit<TaskDocument, 'reference'> {
@@ -38,6 +39,7 @@ interface ResetTaskSessionOptions {
 
 export const useTaskSessionStore = defineStore('task-session', () => {
   const userProfileStore = useUserProfileStore()
+  const snackbarStore = useSnackbarStore()
   const tasks = ref<TaskSessionTask[]>([])
   const started = ref(false)
   const currentTaskIndex = ref(0)
@@ -83,6 +85,11 @@ export const useTaskSessionStore = defineStore('task-session', () => {
   }))
 
   const hasRecoverableSession = computed(() => Boolean(recoverableSession.value))
+
+  const setGenerationError = (message: string) => {
+    generationError.value = message
+    snackbarStore.showError(message)
+  }
 
   const saveSessionSnapshot = () => {
     if (!import.meta.client) {
@@ -174,7 +181,7 @@ export const useTaskSessionStore = defineStore('task-session', () => {
 
   const setSessionTasks = (sessionTasks: TaskSessionTask[]) => {
     if (sessionTasks.length === 0) {
-      generationError.value = 'No tasks loaded'
+      setGenerationError('No tasks loaded')
       return
     }
 
@@ -193,7 +200,7 @@ export const useTaskSessionStore = defineStore('task-session', () => {
     const requestedTasksCount = clampTasksPerSession(params.tasksCount ?? sessionTasksCount.value)
 
     if (hasRecoverableSession.value) {
-      generationError.value = 'Resume your previous game before generating a new one.'
+      setGenerationError('Resume your previous game before generating a new one.')
       throw new Error(generationError.value)
     }
 
@@ -244,7 +251,7 @@ export const useTaskSessionStore = defineStore('task-session', () => {
       return savedTasks
     }
     catch (caughtError) {
-      generationError.value = caughtError instanceof Error ? caughtError.message : 'Failed to generate tasks'
+      setGenerationError(caughtError instanceof Error ? caughtError.message : 'Failed to generate tasks')
       throw caughtError
     }
     finally {

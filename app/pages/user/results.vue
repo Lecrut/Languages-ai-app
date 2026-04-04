@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { formatDateTime } from '../../helpers/format-date'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useResultsStore } from '../../stores/use-results-store'
+import { useStreakInfoStore } from '../../stores/use-streak-info-store'
 import { useDisplay } from 'vuetify'
 
 definePageMeta({
@@ -13,6 +14,7 @@ const { t, locale } = useI18n()
 const { lgAndUp } = useDisplay()
 const authStore = useAuthStore()
 const resultsStore = useResultsStore()
+const streakInfoStore = useStreakInfoStore()
 const selectedSessionId = ref<string | null>(null)
 const detailsDialogVisible = ref(false)
 const { setPageTitle } = usePageHead()
@@ -38,6 +40,23 @@ const averageCorrectPerSession = computed(() => {
 
   return Number((summaryCorrectCount.value / topTenSessions.value.length).toFixed(1))
 })
+
+const formatStreakDate = (date: Date | undefined) => {
+  if (!date) {
+    return '-'
+  }
+
+  return new Intl.DateTimeFormat(locale.value, {
+    dateStyle: 'medium',
+  }).format(date)
+}
+
+const currentStreakCount = computed(() => streakInfoStore.streakInfo?.currentCount ?? 0)
+const longestStreakCount = computed(() => streakInfoStore.streakInfo?.longestCount ?? 0)
+const longestStreakRangeLabel = computed(() => t('results.streakRange', {
+  from: formatStreakDate(streakInfoStore.streakInfo?.longest.from),
+  to: formatStreakDate(streakInfoStore.streakInfo?.longest.to),
+}))
 const selectedSession = computed(() => resultsStore.sessions.find(session => session.id === selectedSessionId.value) ?? null)
 const orderedTasks = computed(() => {
   if (!selectedSession.value) {
@@ -136,6 +155,25 @@ watch(
         <p class="text-body-medium text-medium-emphasis mb-0">
           {{ t('results.statsInfo') }}
         </p>
+
+        <VAlert
+          variant="tonal"
+          color="error"
+          icon="mdi-fire"
+        >
+          {{ t('results.currentStreak', { count: currentStreakCount }) }}
+        </VAlert>
+
+        <VAlert
+          type="warning"
+          variant="tonal"
+          prepend-icon="mdi-trophy-outline"
+        >
+          {{ t('results.longestStreak', { count: longestStreakCount }) }}
+          <div class="text-caption mt-1">
+            {{ longestStreakRangeLabel }}
+          </div>
+        </VAlert>
       </VCardText>
     </VCard>
 

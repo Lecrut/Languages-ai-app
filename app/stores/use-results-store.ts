@@ -21,6 +21,7 @@ import type { ResultSessionItem, ResultTaskPayload } from '../models/result'
 import type { SaveTaskResultPayload } from '../models/task-result'
 import { useFirebase } from '../composables/useFirebase'
 import { useSharedStore } from './use-shared-store'
+import { useStreakInfoStore } from './use-streak-info-store'
 
 const PAGE_SIZE = 10
 const FIRESTORE_OPERATION_TIMEOUT_MS = 10000
@@ -38,6 +39,7 @@ const withTimeout = async <T>(operation: Promise<T>, timeoutMessage: string): Pr
 
 export const useResultsStore = defineStore('results', () => {
   const sharedStore = useSharedStore()
+  const streakInfoStore = useStreakInfoStore()
   const sessions = ref<ResultSessionItem[]>([])
   const hasMore = ref(true)
   const loadingMore = ref(false)
@@ -120,6 +122,13 @@ export const useResultsStore = defineStore('results', () => {
         totalTasks: mappedTasks.length,
         tasks: mappedTasks,
       }, ...sessions.value]
+
+      try {
+        await streakInfoStore.recordSessionCompletion(uid, new Date(), { silent: true })
+      }
+      catch (streakError) {
+        console.error('Streak update failed after successful results save:', streakError)
+      }
     }
     catch (caughtError) {
       sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Failed to save result summary')

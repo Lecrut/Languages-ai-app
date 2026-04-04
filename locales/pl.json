@@ -4,7 +4,9 @@
     "switchToPl": "PL",
     "switchToEn": "EN",
     "themeLight": "Jasny",
-    "themeDark": "Ciemny"
+    "themeDark": "Ciemny",
+    "streakCurrent": "Seria: {current}",
+    "streakSummary": "Seria: {current} / {longest}"
   },
   "nav": {
     "home": "Główna",
@@ -151,6 +153,9 @@
     "correctCount": "Poprawne: {count}",
     "incorrectCount": "Błędne: {count}",
     "averageCorrectPerSession": "Średnio poprawnych na sesję: {count}",
+    "currentStreak": "Seria {count} dni",
+    "longestStreak": "Najdłuższa seria {count} dni",
+    "streakRange": "Od {from} do {to}",
     "sessionTasks": "Zadań: {count}",
     "loadMore": "Pobierz więcej",
     "empty": "Brak zapisanych sesji.",

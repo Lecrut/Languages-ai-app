@@ -13,8 +13,9 @@ import {
   type User,
   verifyPasswordResetCode,
 } from 'firebase/auth'
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import type { AuthUser } from '../models/auth-user'
+import { createDefaultFirestoreStreakInfo } from '../models/streak-info'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import { DEFAULT_LEARNING_LEVEL } from '../constants/learning-levels'
 import { TASKS_PER_SESSION_DEFAULT } from '../constants/task-session-settings'
@@ -24,6 +25,7 @@ import { useResultsStore } from './use-results-store'
 import { useSharedStore } from './use-shared-store'
 import { useSnackbarStore } from './use-snackbar-store'
 import { useTaskSessionStore } from './use-task-session-store'
+import { useStreakInfoStore } from './use-streak-info-store'
 import { useUserProfileStore } from './use-user-profile-store'
 
 const AUTH_OPERATION_TIMEOUT_MS = 10000
@@ -58,6 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
   const initPromise = ref<Promise<void> | null>(null)
   const sharedStore = useSharedStore()
   const userProfileStore = useUserProfileStore()
+  const streakInfoStore = useStreakInfoStore()
   const loading = computed(() => sharedStore.loading)
   const error = computed(() => sharedStore.error)
   const isAuthenticated = computed(() => Boolean(user.value))
@@ -65,10 +68,12 @@ export const useAuthStore = defineStore('auth', () => {
   const syncUserProfile = async (authUser: AuthUser | null) => {
     if (!authUser) {
       userProfileStore.reset()
+      streakInfoStore.reset()
       return
     }
 
     await userProfileStore.loadOrCreateProfile(authUser)
+    await streakInfoStore.loadOrCreateStreakInfo(authUser)
   }
 
   const initAuth = async () => {
@@ -157,7 +162,10 @@ export const useAuthStore = defineStore('auth', () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
       const userDocRef = doc(db, FIREBASE_COLLECTIONS.users, userCredential.user.uid)
-      await setDoc(userDocRef, {
+      const streakInfoDocRef = doc(db, FIREBASE_COLLECTIONS.streakInfo, userCredential.user.uid)
+      const batch = writeBatch(db)
+
+      batch.set(userDocRef, {
         uid: userCredential.user.uid,
         nick: nick.trim() || getDefaultNicknameFromEmail(userCredential.user.email),
         appLanguage: 'pl',
@@ -169,11 +177,16 @@ export const useAuthStore = defineStore('auth', () => {
         createdAt: serverTimestamp(),
       })
 
+      batch.set(streakInfoDocRef, createDefaultFirestoreStreakInfo())
+
+      await batch.commit()
+
       await sendEmailVerification(userCredential.user)
 
       await signOut(auth)
       user.value = null
       userProfileStore.reset()
+      streakInfoStore.reset()
     }
     catch (caughtError) {
       sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Registration failed')
@@ -200,6 +213,7 @@ export const useAuthStore = defineStore('auth', () => {
       useTaskSessionStore().reset({ preserveRecoverableSession: true })
       useResultsStore().reset()
       useUserProfileStore().reset()
+      useStreakInfoStore().reset()
       useSnackbarStore().reset()
       sharedStore.reset()
     }
