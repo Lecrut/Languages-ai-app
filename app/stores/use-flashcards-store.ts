@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { Timestamp, collection, deleteDoc, doc, getDocs, query, serverTimestamp, updateDoc, where, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
-import { AI_FLASHCARD_GENERATION_COUNT, AI_FLASHCARD_SYSTEM_INSTRUCTION, buildAiFlashcardPrompt } from '../constants/ai-flashcard-prompts'
+import { AI_FLASHCARD_GENERATION_COUNT, AI_FLASHCARD_SYSTEM_INSTRUCTION, buildAiFlashcardPrompt, resolveFlashcardTranslationLanguage } from '../constants/ai-flashcard-prompts'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import { parseAiGeneratedFlashcardList } from '../models/schemas/ai-generated-flashcard.schema'
 import type { ResultTaskPayload } from '../models/types/result'
@@ -122,7 +122,7 @@ export const useFlashcardsStore = defineStore('flashcards', () => {
     }
   }
 
-  const generateFromTaskResults = async (uid: string, taskResults: ResultTaskPayload[]) => {
+  const generateFromTaskResults = async (uid: string, taskResults: ResultTaskPayload[], appLanguage: string) => {
     sharedStore.startLoading()
 
     try {
@@ -132,8 +132,10 @@ export const useFlashcardsStore = defineStore('flashcards', () => {
 
       await fetchSavedCards(uid)
 
+      const translationLanguage = resolveFlashcardTranslationLanguage(appLanguage)
+
       const jsonText = await generateJsonWithAi({
-        prompt: buildAiFlashcardPrompt(taskResults),
+        prompt: buildAiFlashcardPrompt(taskResults, translationLanguage),
         systemInstruction: AI_FLASHCARD_SYSTEM_INSTRUCTION,
         temperature: 0.35,
       })

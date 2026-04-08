@@ -89,40 +89,23 @@ const handleIsKnownChange = (value: boolean | null) => {
     </VCol>
 
     <VCol cols="12">
-      <VTextarea
+      <VTextField
         :model-value="draftCard.translation"
         :label="t('flashcards.translation')"
         variant="outlined"
-        auto-grow
-        rows="3"
         @update:model-value="updateDraftField('translation', $event)"
       />
     </VCol>
 
     <VCol cols="12">
-      <VTextarea
+      <VTextField
         :model-value="draftCard.hint || ''"
         :label="t('flashcards.hint')"
         variant="outlined"
-        auto-grow
-        rows="2"
         :placeholder="t('flashcards.hintPlaceholder')"
         @update:model-value="updateDraftField('hint', $event || null)"
       />
     </VCol>
 
-    <VCol
-      cols="12"
-      md="6"
-    >
-      <VTextField
-        :model-value="knownAtInput"
-        type="datetime-local"
-        step="60"
-        :label="t('flashcards.knownAt')"
-        variant="outlined"
-        @update:model-value="$emit('update:knownAtInput', $event)"
-      />
-    </VCol>
   </VRow>
 </template>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, toRef, watch } from 'vue'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useFlashcardEditor } from '../../composables/useFlashcardEditor'
+import { fromDateTimeLocalValue } from '../../helpers/flashcard-converters'
+import { flashcardSchema } from '../../models/schemas/flashcard.schema'
 import type { FlashcardDocument } from '../../models/schemas/flashcard.schema'
 import FlashcardDetailsViewMode from './FlashcardDetailsViewMode.vue'
 import FlashcardDetailsEditorMode from './FlashcardDetailsEditorMode.vue'
@@ -10,6 +12,8 @@ import FlashcardDeleteDialog from './FlashcardDeleteDialog.vue'
 const props = defineProps<{
   card: FlashcardDocument | null
   allowDelete?: boolean
+  autoEditOnCardChange?: boolean
+  forceEditMode?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -19,20 +23,59 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+const cardRef = toRef(props, 'card')
 
-const { isEditing, draftCard, knownAtInput, startEditing, cancelEditing, saveEditing } = useFlashcardEditor(props.card)
+const { isEditing, draftCard, knownAtInput, startEditing, saveEditing } = useFlashcardEditor(cardRef)
 const isDeleteDialogOpen = ref(false)
 
 const isVerified = computed(() => authStore.user?.emailVerified ?? false)
-const canEdit = computed(() => isVerified.value && props.card !== null)
-const showEditButton = computed(() => isVerified.value)
+const isForceEditMode = computed(() => Boolean(props.forceEditMode))
+const canEdit = computed(() => (isForceEditMode.value ? props.card !== null : isVerified.value && props.card !== null))
 const canDelete = computed(() => Boolean(props.allowDelete && props.card))
+const cardStatusLabel = computed(() => {
+  if (!props.card) {
+    return ''
+  }
+
+  return props.card.isKnown ? t('flashcards.known') : t('flashcards.unknown')
+})
+const cardStatusColor = computed(() => (props.card?.isKnown ? 'success' : 'error'))
 
 const handleSave = () => {
   const updatedCard = saveEditing()
   if (updatedCard) {
     emit('save', updatedCard)
   }
+}
+
+const handleDraftCardUpdate = (card: FlashcardDocument) => {
+  draftCard.value = card
+
+  if (!isForceEditMode.value) {
+    return
+  }
+
+  const liveUpdatedCard = flashcardSchema.parse({
+    ...card,
+    knownAt: fromDateTimeLocalValue(knownAtInput.value),
+  })
+
+  emit('save', liveUpdatedCard)
+}
+
+const handleKnownAtInputUpdate = (value: string) => {
+  knownAtInput.value = value
+
+  if (!isForceEditMode.value || !draftCard.value) {
+    return
+  }
+
+  const liveUpdatedCard = flashcardSchema.parse({
+    ...draftCard.value,
+    knownAt: fromDateTimeLocalValue(value),
+  })
+
+  emit('save', liveUpdatedCard)
 }
 
 const openDeleteDialog = () => {
@@ -48,82 +91,72 @@ const handleDeleteConfirm = () => {
 }
 
 const editButtonTooltip = computed(() => {
-  if (!isVerified.value) {
+  if (!isVerified.value && !isForceEditMode.value) {
     return t('flashcards.needVerification')
   }
-  if (!props.card && isEditing.value) {
+  if (!props.card) {
     return t('flashcards.editButtonBelow')
   }
   return ''
 })
+
+watch(
+  () => props.card,
+  () => {
+    if ((!props.autoEditOnCardChange && !isForceEditMode.value) || !canEdit.value || !props.card) {
+      return
+    }
+
+    startEditing()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
-  <VCard
-    class="mb-6"
-    variant="tonal"
-  >
-    <VCardText class="d-flex flex-wrap align-center justify-space-between ga-3">
-      <div>
-        <p class="text-body-large font-weight-bold mb-1">
-          {{ t('flashcards.detailTitle') }}
-        </p>
-        <p class="text-body-small mb-0 text-medium-emphasis">
-          {{ t('flashcards.detailDescription') }}
-        </p>
+  <div class="d-flex flex-column ga-3 mb-4">
+    <div class="d-flex align-center justify-space-between ga-3 flex-wrap">
+      <div class="text-h5 font-weight-bold">
+        {{ t('flashcards.cardTitle') }}
       </div>
 
-      <div class="d-flex ga-2 flex-wrap">
+      <div class="d-flex justify-end ga-2 flex-wrap">
         <VTooltip
-          v-if="!isEditing && showEditButton"
+          v-if="!isForceEditMode"
           :text="editButtonTooltip"
           :disabled="canEdit"
         >
           <template #activator="{ props: tooltipProps }">
             <VBtn
               v-bind="tooltipProps"
-              color="primary"
-              variant="outlined"
-              prepend-icon="mdi-pencil"
+              :icon="isEditing ? 'mdi-content-save' : 'mdi-pencil'"
+              :color="isEditing ? 'success' : 'primary'"
+              :variant="isEditing ? 'flat' : 'outlined'"
               :disabled="!canEdit"
-              @click="startEditing"
-            >
-              {{ t('flashcards.edit') }}
-            </VBtn>
+              @click="isEditing ? handleSave() : startEditing()"
+            />
           </template>
         </VTooltip>
 
         <VBtn
-          v-if="canDelete"
+          v-if="canDelete && !isForceEditMode"
+          icon="mdi-delete"
           color="error"
           variant="outlined"
-          prepend-icon="mdi-delete"
           @click="openDeleteDialog"
-        >
-          {{ t('flashcards.delete') }}
-        </VBtn>
-
-        <VBtn
-          v-if="isEditing"
-          color="success"
-          variant="flat"
-          prepend-icon="mdi-content-save"
-          @click="handleSave"
-        >
-          {{ t('flashcards.save') }}
-        </VBtn>
-        <VBtn
-          v-if="isEditing"
-          color="secondary"
-          variant="outlined"
-          prepend-icon="mdi-close"
-          @click="cancelEditing"
-        >
-          {{ t('flashcards.cancel') }}
-        </VBtn>
+        />
       </div>
-    </VCardText>
-  </VCard>
+    </div>
+
+    <VChip
+      v-if="cardStatusLabel"
+      :color="cardStatusColor"
+      variant="tonal"
+      class="align-self-start"
+    >
+      {{ cardStatusLabel }}
+    </VChip>
+  </div>
 
   <FlashcardDeleteDialog
     v-model="isDeleteDialogOpen"
@@ -140,8 +173,8 @@ const editButtonTooltip = computed(() => {
       v-else
       :draft-card="draftCard!"
       :known-at-input="knownAtInput"
-      @update:draft-card="draftCard = $event"
-      @update:known-at-input="knownAtInput = $event"
+      @update:draft-card="handleDraftCardUpdate"
+      @update:known-at-input="handleKnownAtInputUpdate"
     />
   </template>
 

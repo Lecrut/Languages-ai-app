@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import { flashcardSchema, type FlashcardDocument } from '../models/schemas/flashcard.schema'
 import { cloneFlashcardDocument } from '../helpers/flashcard-converters'
-import FlashcardDetailsPanel from './flashcards/FlashcardDetailsPanel.vue'
 
 const props = withDefaults(defineProps<{
   cards: FlashcardDocument[]
@@ -16,6 +15,7 @@ const props = withDefaults(defineProps<{
 })
 
 const currentIndex = defineModel<number>({ default: 0 })
+const showKnownCards = defineModel<boolean>('showKnownCards', { default: false })
 
 const emit = defineEmits<{
   know: [card: FlashcardDocument]
@@ -224,7 +224,7 @@ watch(
 
 <template>
   <VCard
-    class="mx-auto"
+    class="mx-auto d-flex flex-column"
     max-width="1600"
     rounded="xl"
     elevation="10"
@@ -237,6 +237,28 @@ watch(
         </div>
 
         <div class="d-flex align-center ga-2 flex-wrap">
+          <div class="d-flex align-center ga-2 flex-wrap">
+            <VChip
+              :color="showKnownCards ? 'grey' : 'error'"
+              variant="tonal"
+            >
+              {{ t('flashcards.unknown') }}
+            </VChip>
+            <VSwitch
+              v-model="showKnownCards"
+              color="success"
+              hide-details
+              inset
+              density="compact"
+              class="ma-0"
+            />
+            <VChip
+              :color="showKnownCards ? 'success' : 'grey'"
+              variant="tonal"
+            >
+              {{ t('flashcards.known') }}
+            </VChip>
+          </div>
           <VChip
             color="primary"
             variant="flat">
@@ -255,7 +277,7 @@ watch(
             class="font-weight-bold text-none"
             @click="emit('openList')"
           >
-            {{ t('flashcards.openList') }}
+            {{ t('flashcards.listTitle') }}
           </VBtn>
         </div>
       </div>
@@ -285,11 +307,11 @@ watch(
         <VCardText class="pa-4 pa-md-6">
           <div
             class="mx-auto mb-6"
-            style="max-width: 820px;"
+            style="max-width: 740px;"
           >
             <div
               class="position-relative"
-              style="min-height: 420px; perspective: 1600px; touch-action: pan-y;"
+              style="min-height: 360px; perspective: 1600px; touch-action: pan-y;"
             >
               <div
                 v-for="(card, stackIndex) in visibleDeckCards"
@@ -313,29 +335,46 @@ watch(
                     >
                       <div :style="faceBaseStyle">
                         <VCard
-                          class="h-100 d-flex flex-column"
+                          class="h-100 d-flex flex-column bg-white"
                           rounded="xl"
-                          color="primary">
+                          variant="elevated">
                           <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
                             <div class="d-flex align-center justify-space-between ga-2">
                               <VChip
                                 color="primary"
-                                variant="flat"
+                                variant="tonal"
                                 prepend-icon="mdi-text-box-outline">
                                 {{ t('flashcards.text') }}
                               </VChip>
-                              <VChip
-                                color="white"
-                                variant="tonal">
-                                {{ t('flashcards.swipeHint') }}
-                              </VChip>
+                              <div class="d-flex align-center ga-1">
+                                <VTooltip
+                                  v-if="card.hint"
+                                  :text="`${t('flashcards.hint')}: ${card.hint}`"
+                                  location="bottom"
+                                >
+                                  <template #activator="{ props: tooltipProps }">
+                                    <VBtn
+                                      v-bind="tooltipProps"
+                                      icon="mdi-help-circle-outline"
+                                      variant="text"
+                                      size="small"
+                                      color="primary"
+                                    />
+                                  </template>
+                                </VTooltip>
+                                <VChip
+                                  color="secondary"
+                                  variant="tonal">
+                                  {{ t('flashcards.swipeHint') }}
+                                </VChip>
+                              </div>
                             </div>
 
                             <div class="d-flex flex-column ga-3 flex-grow-1 justify-center">
                               <p class="text-overline mb-0 text-medium-emphasis">
                                 {{ t('flashcards.text') }}
                               </p>
-                              <p class="text-h4 text-md-h3 font-weight-bold text-wrap mb-0">
+                              <p class="text-h3 text-md-h2 font-weight-bold text-wrap mb-0">
                                 {{ card.text }}
                               </p>
 
@@ -343,12 +382,12 @@ watch(
 
                               <div class="d-flex ga-2 flex-wrap">
                                 <VChip
-                                  color="white"
+                                  color="primary"
                                   variant="tonal">
                                   {{ t('flashcards.language') }}: {{ card.language }}
                                 </VChip>
                                 <VChip
-                                  color="white"
+                                  color="secondary"
                                   variant="tonal">
                                   {{ t('flashcards.level') }}: {{ t(`flashcards.levels.${card.level}`) }}
                                 </VChip>
@@ -364,19 +403,19 @@ watch(
 
                       <div :style="[faceBaseStyle, backFaceStyle]">
                         <VCard
-                          class="h-100 d-flex flex-column"
+                          class="h-100 d-flex flex-column bg-white"
                           rounded="xl"
-                          color="success">
+                          variant="elevated">
                           <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
                             <div class="d-flex align-center justify-space-between ga-2">
                               <VChip
                                 color="success"
-                                variant="flat"
+                                variant="tonal"
                                 prepend-icon="mdi-translate">
                                 {{ t('flashcards.translation') }}
                               </VChip>
                               <VChip
-                                color="white"
+                                :color="card.isKnown ? 'success' : 'error'"
                                 variant="tonal">
                                 {{ card.isKnown ? t('flashcards.known') : t('flashcards.unknown') }}
                               </VChip>
@@ -390,14 +429,6 @@ watch(
                                 {{ card.translation }}
                               </p>
 
-                              <VAlert
-                                v-if="card.hint"
-                                type="info"
-                                variant="tonal"
-                                class="mt-2"
-                              >
-                                {{ t('flashcards.hint') }}: {{ card.hint }}
-                              </VAlert>
                             </div>
 
                             <p class="text-body-small text-medium-emphasis mb-0">
@@ -412,7 +443,7 @@ watch(
 
                 <template v-else>
                   <VCard
-                    class="h-100"
+                    class="h-100 bg-white"
                     rounded="xl"
                     variant="outlined">
                     <VCardText class="d-flex flex-column justify-center h-100 pa-5 pa-md-6">
@@ -464,13 +495,6 @@ watch(
               {{ t('flashcards.known') }}
             </VBtn>
           </div>
-
-          <FlashcardDetailsPanel
-            :card="activeCard"
-            :allow-delete="!props.selectionMode"
-            @save="handleSave"
-            @delete="emit('delete')"
-          />
         </VCardText>
       </VCard>
     </VCardText>

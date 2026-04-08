@@ -182,7 +182,7 @@
     "save": "Save",
     "cancel": "Cancel",
     "generatedTitle": "Generated flashcards",
-    "generatedDescription": "Select flashcards you want to save. Duplicates are disabled.",
+    "generatedDescription": "Select and edit flashcards from the list, then save them. Only saved cards are available for learning.",
     "saveSelectedCta": "Save selected ({count})",
     "selectAtLeastOne": "Select at least one flashcard.",
     "savedCount": "Saved {count} flashcards.",

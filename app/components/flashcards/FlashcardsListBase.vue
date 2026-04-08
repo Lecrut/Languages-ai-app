@@ -23,42 +23,54 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <VList
-    lines="two"
-    density="comfortable"
-    class="bg-transparent"
-  >
-    <VListItem
+  <div class="d-flex flex-column ga-3">
+    <VCard
       v-for="(card, index) in cards"
       :key="card.text + '-' + card.language + '-' + index"
-      :active="index === selectedIndex"
+      :variant="index === selectedIndex ? 'tonal' : 'elevated'"
       rounded="lg"
-      class="mb-2"
-      :class="{ 'opacity-60': card.disabledDuplicate }"
+      class="cursor-pointer"
+      :class="{ 'opacity-60': card.disabledDuplicate, 'border border-primary': index === selectedIndex }"
       @click="$emit('select', index)"
     >
-      <VListItemTitle class="font-weight-medium">
-        {{ card.text }}
-      </VListItemTitle>
-      <VListItemSubtitle>
-        {{ card.language }} · {{ t(`flashcards.levels.${card.level}`) }}
-      </VListItemSubtitle>
-      <template #append>
-        <VChip
-          size="small"
-          :color="card.disabledDuplicate ? 'grey' : (card.isKnown ? 'success' : 'warning')"
-          variant="tonal"
-        >
-          {{ card.disabledDuplicate ? t('flashcards.alreadyAdded') : (card.isKnown ? t('flashcards.known') : t('flashcards.unknown')) }}
-        </VChip>
+      <VCardText class="d-flex ga-3 align-start py-3">
         <VCheckboxBtn
           v-if="selectionMode"
           :model-value="Boolean(card.selectedForAdd)"
           :disabled="Boolean(card.disabledDuplicate)"
           color="primary"
+          class="mt-1"
           @click.stop="$emit('toggleSelection', index)"
         />
-      </template>
-    </VListItem>
-  </VList>
+
+        <div class="d-flex flex-column ga-3 flex-grow-1 min-w-0">
+          <span class="text-body-large font-weight-medium">{{ card.text }}</span>
+
+          <div class="d-flex ga-2 flex-wrap align-center">
+            <VChip
+              size="small"
+              color="primary"
+              variant="tonal"
+            >
+              {{ card.language }}
+            </VChip>
+            <VChip
+              size="small"
+              color="secondary"
+              variant="tonal"
+            >
+              {{ t(`flashcards.levels.${card.level}`) }}
+            </VChip>
+            <VChip
+              size="small"
+              :color="card.disabledDuplicate ? 'grey' : (card.isKnown ? 'success' : 'warning')"
+              variant="tonal"
+            >
+              {{ card.disabledDuplicate ? t('flashcards.alreadyAdded') : (card.isKnown ? t('flashcards.known') : t('flashcards.unknown')) }}
+            </VChip>
+          </div>
+        </div>
+      </VCardText>
+    </VCard>
+  </div>
 </template>

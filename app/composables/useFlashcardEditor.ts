@@ -1,32 +1,32 @@
-import { ref, watch } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import { cloneFlashcardDocument, fromDateTimeLocalValue, toDateTimeLocalValue } from '../helpers/flashcard-converters'
 import { flashcardSchema, type FlashcardDocument } from '../models/schemas/flashcard.schema'
 
-export const useFlashcardEditor = (card: FlashcardDocument | null) => {
+export const useFlashcardEditor = (card: Ref<FlashcardDocument | null>) => {
   const isEditing = ref(false)
   const draftCard = ref<FlashcardDocument | null>(null)
   const knownAtInput = ref('')
 
   const syncDraft = () => {
-    if (!card) {
+    if (!card.value) {
       draftCard.value = null
       knownAtInput.value = ''
       isEditing.value = false
       return
     }
 
-    draftCard.value = cloneFlashcardDocument(card)
-    knownAtInput.value = toDateTimeLocalValue(card.knownAt)
+    draftCard.value = cloneFlashcardDocument(card.value)
+    knownAtInput.value = toDateTimeLocalValue(card.value.knownAt)
     isEditing.value = false
   }
 
   const startEditing = () => {
-    if (!card) {
+    if (!card.value) {
       return
     }
 
-    draftCard.value = cloneFlashcardDocument(card)
-    knownAtInput.value = toDateTimeLocalValue(card.knownAt)
+    draftCard.value = cloneFlashcardDocument(card.value)
+    knownAtInput.value = toDateTimeLocalValue(card.value.knownAt)
     isEditing.value = true
   }
 
@@ -49,7 +49,7 @@ export const useFlashcardEditor = (card: FlashcardDocument | null) => {
   }
 
   watch(
-    () => card,
+    card,
     () => {
       syncDraft()
     },

@@ -79,9 +79,12 @@ service cloud.firestore {
       allow create: if isVerifiedEmail()
         && request.resource.data.userRef == userDocRef(request.auth.uid);
 
-      allow update, delete: if isVerifiedEmail()
+      allow update: if isVerifiedEmail()
         && resource.data.userRef == userDocRef(request.auth.uid)
         && request.resource.data.userRef == userDocRef(request.auth.uid);
+
+      allow delete: if isVerifiedEmail()
+        && resource.data.userRef == userDocRef(request.auth.uid);
     }
 
     // Domyślnie blokuj wszystko inne

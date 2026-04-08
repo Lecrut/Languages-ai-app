@@ -182,7 +182,7 @@
     "save": "Zapisz",
     "cancel": "Anuluj",
     "generatedTitle": "Wygenerowane fiszki",
-    "generatedDescription": "Zaznacz fiszki, które chcesz zapisać. Duplikaty są zablokowane.",
+    "generatedDescription": "Zaznacz i edytuj fiszki z listy, a potem je zapisz. Dopiero zapisane fiszki są dostępne do nauki.",
     "saveSelectedCta": "Zapisz zaznaczone ({count})",
     "selectAtLeastOne": "Zaznacz przynajmniej jedną fiszkę.",
     "savedCount": "Zapisano {count} fiszek.",

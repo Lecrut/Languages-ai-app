@@ -18,7 +18,7 @@ definePageMeta({
   middleware: 'auth',
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -166,7 +166,8 @@ const generateFlashcardsFromSession = async () => {
   }
 
   try {
-    await flashcardsStore.generateFromTaskResults(uid, sessionTaskResults)
+    const appLanguage = userProfileStore.profile?.appLanguage ?? locale.value
+    await flashcardsStore.generateFromTaskResults(uid, sessionTaskResults, appLanguage)
     taskSessionStore.reset()
     isResultSaved.value = false
     selectedMode.value = null

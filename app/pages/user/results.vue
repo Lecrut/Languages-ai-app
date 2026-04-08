@@ -6,6 +6,7 @@ import { useFlashcardsStore } from '../../stores/use-flashcards-store'
 import { useResultsStore } from '../../stores/use-results-store'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
 import { useStreakInfoStore } from '../../stores/use-streak-info-store'
+import { useUserProfileStore } from '../../stores/use-user-profile-store'
 import { useDisplay } from 'vuetify'
 
 definePageMeta({
@@ -19,6 +20,7 @@ const flashcardsStore = useFlashcardsStore()
 const resultsStore = useResultsStore()
 const snackbarStore = useSnackbarStore()
 const streakInfoStore = useStreakInfoStore()
+const userProfileStore = useUserProfileStore()
 const localePath = useLocalePath()
 const router = useRouter()
 const selectedSessionId = ref<string | null>(null)
@@ -131,7 +133,8 @@ const generateFlashcardsFromSession = async () => {
       return
     }
 
-    await flashcardsStore.generateFromTaskResults(uid, sessionTasks)
+    const appLanguage = userProfileStore.profile?.appLanguage ?? locale.value
+    await flashcardsStore.generateFromTaskResults(uid, sessionTasks, appLanguage)
     await router.push(localePath('/user/flashcards'))
   }
   catch (caughtError) {
