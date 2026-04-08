@@ -11,6 +11,8 @@ export interface ResultTaskEntry {
 export interface ResultDocument {
   userReference: DocumentReference<DocumentData>
   date: unknown
+  language: string | null
+  level: string | null
   task: ResultTaskEntry[]
 }
 
@@ -30,13 +32,13 @@ export interface ResultSessionTaskItem {
   question: string
   correctAnswer: string
   userAnswer: string
-  language: string | null
-  level: string | null
 }
 
 export interface ResultSessionItem {
   id: string
   date: Date | null
+  language: string | null
+  level: string | null
   correctCount: number
   incorrectCount: number
   totalTasks: number

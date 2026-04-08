@@ -19,6 +19,7 @@ const emit = defineEmits<{
   submitAnswer: [answer: string]
   next: []
   restart: []
+  generateFlashcards: []
   close: []
 }>()
 
@@ -224,9 +225,9 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
           md="8"
           lg="6">
           <VCard
-            variant="tonal"
+            variant="flat"
             class="mb-4">
-            <VCardTitle>{{ $t('play.summaryTitle') }}</VCardTitle>
+            <VCardTitle class="text-center font-weight-bold">{{ $t('play.summaryTitle') }}</VCardTitle>
             <VCardText class="d-flex flex-column align-center ga-4">
               <VProgressCircular
                 :model-value="scorePercentage"
@@ -256,14 +257,27 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
             </VCardText>
           </VCard>
 
-          <VBtn
-            block
-            color="primary"
-            size="x-large"
-            @click="emit('close')"
-          >
-            {{ $t('play.close') }}
-          </VBtn>
+          <div class="d-flex flex-column ga-3">
+            <VBtn
+              block
+              color="primary"
+              size="x-large"
+              prepend-icon="mdi-cards-outline"
+              @click="emit('generateFlashcards')"
+            >
+              {{ $t('play.generateFlashcards') }}
+            </VBtn>
+
+            <VBtn
+              block
+              color="primary"
+              variant="tonal"
+              size="large"
+              @click="emit('close')"
+            >
+              {{ $t('play.close') }}
+            </VBtn>
+          </div>
         </VCol>
       </VRow>
 

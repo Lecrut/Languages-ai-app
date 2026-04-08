@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import FlashcardDeck from '../../components/FlashcardDeck.vue'
+import FlashcardsListBase from '../../components/flashcards/FlashcardsListBase.vue'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useFlashcardUpdate } from '../../composables/useFlashcardUpdate'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
@@ -16,6 +17,7 @@ const { setPageTitle } = usePageHead()
 const authStore = useAuthStore()
 const snackbarStore = useSnackbarStore()
 const currentIndex = ref(0)
+const isListViewVisible = ref(false)
 
 const { flashcardsStore, currentCards, isSelectionMode, updateCardFromDeck, toggleSelectionAtIndex } = useFlashcardUpdate()
 
@@ -29,6 +31,19 @@ const syncCards = async (uid: string | undefined) => {
   }
 
   await flashcardsStore.fetchSavedCards(uid)
+}
+
+const openListView = () => {
+  isListViewVisible.value = true
+}
+
+const closeListView = () => {
+  isListViewVisible.value = false
+}
+
+const selectCardFromList = (index: number) => {
+  currentIndex.value = index
+  isListViewVisible.value = false
 }
 
 const saveSelectedCards = async () => {
@@ -83,12 +98,23 @@ watch(
   (length) => {
     if (length === 0) {
       currentIndex.value = 0
+      isListViewVisible.value = false
       return
     }
 
     currentIndex.value = Math.max(0, Math.min(currentIndex.value, length - 1))
   },
   { immediate: true },
+)
+
+watch(
+  () => currentCards.value,
+  () => {
+    if (!currentCards.value.length) {
+      isListViewVisible.value = false
+    }
+  },
+  { deep: true },
 )
 </script>
 
@@ -127,6 +153,7 @@ watch(
       </VCard>
 
       <FlashcardDeck
+        v-if="!isListViewVisible"
         v-model="currentIndex"
         :cards="currentCards"
         :title="t('flashcards.title')"
@@ -137,7 +164,42 @@ watch(
         @save="(card) => updateCardFromDeck(card, currentIndex)"
         @delete="deleteCardFromDeck"
         @toggle-selection="toggleSelectionAtIndex"
+        @open-list="openListView"
       />
+
+      <VCard
+        v-else
+        class="mx-auto"
+        max-width="1600"
+        rounded="xl"
+        elevation="10"
+      >
+        <VCardText class="pa-4 pa-md-6">
+          <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
+            <div>
+              <p class="text-h3 text-md-h2 font-weight-bold mb-1">{{ t('flashcards.listTitle') }}</p>
+              <p class="text-body-large mb-0 text-medium-emphasis">{{ t('flashcards.subtitle') }}</p>
+            </div>
+
+            <VBtn
+              color="primary"
+              variant="tonal"
+              prepend-icon="mdi-arrow-left"
+              @click="closeListView"
+            >
+              {{ t('flashcards.closeList') }}
+            </VBtn>
+          </div>
+
+          <FlashcardsListBase
+            :cards="currentCards"
+            :selected-index="currentIndex"
+            :selection-mode="isSelectionMode"
+            @select="selectCardFromList"
+            @toggle-selection="toggleSelectionAtIndex"
+          />
+        </VCardText>
+      </VCard>
     </VCol>
   </VRow>
 </template>

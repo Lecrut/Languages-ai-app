@@ -64,6 +64,8 @@ const longestStreakRangeLabel = computed(() => t('results.streakRange', {
   to: formatStreakDate(streakInfoStore.streakInfo?.longest.to),
 }))
 const selectedSession = computed(() => resultsStore.sessions.find(session => session.id === selectedSessionId.value) ?? null)
+const selectedSessionLanguage = computed(() => selectedSession.value?.language ?? null)
+const selectedSessionLevel = computed(() => selectedSession.value?.level ?? null)
 const orderedTasks = computed(() => {
   if (!selectedSession.value) {
     return []
@@ -99,23 +101,37 @@ const loadMoreSessions = async () => {
   catch (_e) {}
 }
 
-const generateFlashcardsFromResults = async () => {
+const generateFlashcardsFromSession = async () => {
   const uid = authStore.user?.uid
   if (!uid) {
+    return
+  }
+
+  const activeSession = selectedSession.value
+  if (!activeSession) {
+    snackbarStore.showError(t('results.selectSession'))
     return
   }
 
   generatingFlashcards.value = true
 
   try {
-    const allTasks = await resultsStore.fetchAllResultTasks(uid)
+    const sessionTasks = activeSession.tasks.map(task => ({
+      taskId: task.id,
+      isPassed: task.isPassed,
+      question: task.question,
+      correctAnswer: task.correctAnswer,
+      userAnswer: task.userAnswer,
+      language: activeSession.language,
+      level: activeSession.level,
+    }))
 
-    if (allTasks.length === 0) {
+    if (sessionTasks.length === 0) {
       snackbarStore.showError(t('results.noTasksForFlashcards'))
       return
     }
 
-    await flashcardsStore.generateFromTaskResults(uid, allTasks)
+    await flashcardsStore.generateFromTaskResults(uid, sessionTasks)
     await router.push(localePath('/user/flashcards'))
   }
   catch (caughtError) {
@@ -205,22 +221,7 @@ watch(
 
     <VCard class="results-panel results-panel--sessions">
       <VCardTitle class="text-headline-large px-6 pt-5 pb-2">{{ t('results.title') }}</VCardTitle>
-      <VCardText class="px-6 pb-2">
-        {{ t('results.description') }}
-      </VCardText>
-
-      <div class="results-panel__body px-6 pb-6">
-        <div class="d-flex justify-center mb-4">
-          <VBtn
-            color="primary"
-            variant="flat"
-            prepend-icon="mdi-cards-outline"
-            :loading="generatingFlashcards || flashcardsStore.generating"
-            @click="generateFlashcardsFromResults"
-          >
-            {{ t('results.generateFlashcards') }}
-          </VBtn>
-        </div>
+      <div class="results-panel__body px-6 pt-0 pb-6">
         <div
           v-if="!resultsStore.sessions.length"
           class="mt-2"
@@ -297,6 +298,37 @@ watch(
           {{ formatDateTime(selectedSession.date, locale) }}
         </div>
 
+        <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3 mb-4">
+          <div class="d-flex ga-2 flex-wrap">
+            <VChip
+              v-if="selectedSessionLanguage"
+              color="primary"
+              variant="tonal"
+              size="small"
+            >
+              {{ t('results.taskLanguageLabel', { value: selectedSessionLanguage }) }}
+            </VChip>
+            <VChip
+              v-if="selectedSessionLevel"
+              color="secondary"
+              variant="tonal"
+              size="small"
+            >
+              {{ t('results.taskLevelLabel', { value: selectedSessionLevel }) }}
+            </VChip>
+          </div>
+
+          <VBtn
+            color="primary"
+            variant="flat"
+            prepend-icon="mdi-cards-outline"
+            :loading="generatingFlashcards || flashcardsStore.generating"
+            @click="generateFlashcardsFromSession"
+          >
+            {{ t('results.generateFlashcards') }}
+          </VBtn>
+        </div>
+
         <VRow dense>
           <VCol
             v-for="task in orderedTasks"
@@ -313,24 +345,6 @@ watch(
                 <div class="d-flex align-center ga-2">
                   <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
                   <span class="text-label-large">{{ task.question }}</span>
-                </div>
-                <div class="d-flex ga-2 flex-wrap">
-                  <VChip
-                    v-if="task.language"
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                  >
-                    {{ t('results.taskLanguageLabel', { value: task.language }) }}
-                  </VChip>
-                  <VChip
-                    v-if="task.level"
-                    color="secondary"
-                    variant="tonal"
-                    size="small"
-                  >
-                    {{ t('results.taskLevelLabel', { value: task.level }) }}
-                  </VChip>
                 </div>
                 <p class="mb-0 text-body-medium">
                   {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
@@ -373,6 +387,37 @@ watch(
               {{ formatDateTime(selectedSession.date, locale) }}
             </p>
 
+            <div class="d-flex flex-column ga-3 mb-1">
+              <div class="d-flex ga-2 flex-wrap">
+                <VChip
+                  v-if="selectedSessionLanguage"
+                  color="primary"
+                  variant="tonal"
+                  size="small"
+                >
+                  {{ t('results.taskLanguageLabel', { value: selectedSessionLanguage }) }}
+                </VChip>
+                <VChip
+                  v-if="selectedSessionLevel"
+                  color="secondary"
+                  variant="tonal"
+                  size="small"
+                >
+                  {{ t('results.taskLevelLabel', { value: selectedSessionLevel }) }}
+                </VChip>
+              </div>
+
+              <VBtn
+                color="primary"
+                variant="flat"
+                prepend-icon="mdi-cards-outline"
+                :loading="generatingFlashcards || flashcardsStore.generating"
+                @click="generateFlashcardsFromSession"
+              >
+                {{ t('results.generateFlashcards') }}
+              </VBtn>
+            </div>
+
             <VCard
               v-for="task in orderedTasks"
               :key="task.id"
@@ -383,24 +428,6 @@ watch(
                 <div class="d-flex align-center ga-2">
                   <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
                   <span class="text-label-large">{{ task.question }}</span>
-                </div>
-                <div class="d-flex ga-2 flex-wrap">
-                  <VChip
-                    v-if="task.language"
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                  >
-                    {{ t('results.taskLanguageLabel', { value: task.language }) }}
-                  </VChip>
-                  <VChip
-                    v-if="task.level"
-                    color="secondary"
-                    variant="tonal"
-                    size="small"
-                  >
-                    {{ t('results.taskLevelLabel', { value: task.level }) }}
-                  </VChip>
                 </div>
                 <p class="mb-0 text-body-medium">
                   {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}

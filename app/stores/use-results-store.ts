@@ -79,20 +79,22 @@ export const useResultsStore = defineStore('results', () => {
 
     try {
       const userReference = doc(db, FIREBASE_COLLECTIONS.users, uid)
-      const task = taskResults.map(({ taskId, isPassed, question, correctAnswer, userAnswer, language, level }) => ({
+      const sessionLanguage = taskResults[0]?.language ?? null
+      const sessionLevel = taskResults[0]?.level ?? null
+      const task = taskResults.map(({ taskId, isPassed, question, correctAnswer, userAnswer }) => ({
         taskReference: doc(db, FIREBASE_COLLECTIONS.tasks, taskId),
         isPassed,
         question,
         correctAnswer,
         userAnswer,
-        language,
-        level,
       }))
 
       await withTimeout(
         addDoc(collection(db, FIREBASE_COLLECTIONS.results), {
           userReference,
           date: serverTimestamp(),
+          language: sessionLanguage,
+          level: sessionLevel,
           task,
         }),
         'Saving results timed out',
@@ -113,8 +115,6 @@ export const useResultsStore = defineStore('results', () => {
         question: taskEntry.question,
         correctAnswer: taskEntry.correctAnswer,
         userAnswer: taskEntry.userAnswer,
-        language: taskEntry.language,
-        level: taskEntry.level,
       }))
       const correctCount = mappedTasks.filter(taskEntry => taskEntry.isPassed).length
       const incorrectCount = mappedTasks.length - correctCount
@@ -122,6 +122,8 @@ export const useResultsStore = defineStore('results', () => {
       sessions.value = [{
         id: crypto.randomUUID(),
         date: new Date(),
+        language: sessionLanguage,
+        level: sessionLevel,
         correctCount,
         incorrectCount,
         totalTasks: mappedTasks.length,
@@ -196,6 +198,8 @@ export const useResultsStore = defineStore('results', () => {
       const nextSessions = snapshot.docs.map((sessionDocument) => {
         const data = sessionDocument.data() as {
           date?: Timestamp
+          language?: string | null
+          level?: string | null
           task?: Array<{
             taskReference?: { id?: string }
             isPassed?: boolean
@@ -208,14 +212,16 @@ export const useResultsStore = defineStore('results', () => {
         }
 
         const taskEntries = data.task ?? []
+        const fallbackLanguage = taskEntries.find(taskEntry => taskEntry.language)?.language ?? null
+        const fallbackLevel = taskEntries.find(taskEntry => taskEntry.level)?.level ?? null
+        const sessionLanguage = data.language ?? fallbackLanguage
+        const sessionLevel = data.level ?? fallbackLevel
         const mappedTasks = taskEntries.map((taskEntry, index) => ({
           id: taskEntry.taskReference?.id ?? `task-${index}`,
           isPassed: Boolean(taskEntry.isPassed),
           question: taskEntry.question ?? '-',
           correctAnswer: taskEntry.correctAnswer ?? '-',
           userAnswer: taskEntry.userAnswer ?? '-',
-          language: taskEntry.language ?? null,
-          level: taskEntry.level ?? null,
         }))
         const correctCount = mappedTasks.filter(taskEntry => taskEntry.isPassed).length
         const incorrectCount = taskEntries.length - correctCount
@@ -223,6 +229,8 @@ export const useResultsStore = defineStore('results', () => {
         return {
           id: sessionDocument.id,
           date: data.date instanceof Timestamp ? data.date.toDate() : null,
+          language: sessionLanguage,
+          level: sessionLevel,
           correctCount,
           incorrectCount,
           totalTasks: taskEntries.length,
@@ -272,6 +280,8 @@ export const useResultsStore = defineStore('results', () => {
 
     return snapshot.docs.flatMap((sessionDocument) => {
       const data = sessionDocument.data() as {
+        language?: string | null
+        level?: string | null
         task?: Array<{
           taskReference?: { id?: string }
           isPassed?: boolean
@@ -283,14 +293,19 @@ export const useResultsStore = defineStore('results', () => {
         }>
       }
 
+      const fallbackLanguage = (data.task ?? []).find(taskEntry => taskEntry.language)?.language ?? null
+      const fallbackLevel = (data.task ?? []).find(taskEntry => taskEntry.level)?.level ?? null
+      const sessionLanguage = data.language ?? fallbackLanguage
+      const sessionLevel = data.level ?? fallbackLevel
+
       return (data.task ?? []).map((taskEntry, index) => ({
         taskId: taskEntry.taskReference?.id ?? `${sessionDocument.id}-task-${index}`,
         isPassed: Boolean(taskEntry.isPassed),
         question: taskEntry.question ?? '-',
         correctAnswer: taskEntry.correctAnswer ?? '-',
         userAnswer: taskEntry.userAnswer ?? '-',
-        language: taskEntry.language ?? null,
-        level: taskEntry.level ?? null,
+        language: sessionLanguage,
+        level: sessionLevel,
       }))
     })
   }

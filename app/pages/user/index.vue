@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/use-auth-store'
+import { useFlashcardsStore } from '../../stores/use-flashcards-store'
 import { useResultsStore } from '../../stores/use-results-store'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
 import { useTaskSessionStore } from '../../stores/use-task-session-store'
@@ -21,7 +22,9 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const router = useRouter()
 const authStore = useAuthStore()
+const flashcardsStore = useFlashcardsStore()
 const resultsStore = useResultsStore()
+const snackbarStore = useSnackbarStore()
 const taskSessionStore = useTaskSessionStore()
 const userProfileStore = useUserProfileStore()
 const taskLoader = useTaskLoader()
@@ -110,7 +113,6 @@ const startSessionWithMode = async (mode: TaskLoadMode) => {
     }
 
     if (!profile) {
-      const snackbarStore = useSnackbarStore()
       snackbarStore.showError('Poczekaj, aż preferencje profilu się załadują, i spróbuj ponownie.')
       return
     }
@@ -134,7 +136,6 @@ const startSessionWithMode = async (mode: TaskLoadMode) => {
     taskSessionStore.startSession()
   }
   catch (error) {
-    const snackbarStore = useSnackbarStore()
     const message = error instanceof Error ? error.message : 'Failed to load tasks'
     snackbarStore.showError(message)
   }
@@ -151,6 +152,32 @@ const goToNextTask = () => {
   taskSessionStore.goToNextTask()
 }
 
+const generateFlashcardsFromSession = async () => {
+  const uid = authStore.user?.uid
+  if (!uid) {
+    return
+  }
+
+  const sessionTaskResults = taskSessionStore.taskResults
+
+  if (sessionTaskResults.length === 0) {
+    snackbarStore.showError(t('results.noTasksForFlashcards'))
+    return
+  }
+
+  try {
+    await flashcardsStore.generateFromTaskResults(uid, sessionTaskResults)
+    taskSessionStore.reset()
+    isResultSaved.value = false
+    selectedMode.value = null
+    await router.push(localePath('/user/flashcards'))
+  }
+  catch (error) {
+    const message = error instanceof Error ? error.message : t('results.flashcardsGenerateError')
+    snackbarStore.showError(message)
+  }
+}
+
 const closeSession = async () => {
   taskSessionStore.reset()
   isResultSaved.value = false
@@ -159,7 +186,6 @@ const closeSession = async () => {
 }
 
 const resendVerificationEmail = async () => {
-  const snackbarStore = useSnackbarStore()
   try {
     await authStore.resendVerificationEmail()
     snackbarStore.showSuccess(t('auth.verificationEmailSent') || 'Verification email sent. Please check your inbox.')
@@ -172,7 +198,6 @@ watch(
   () => taskLoader.error.value,
   (error) => {
     if (error) {
-      const snackbarStore = useSnackbarStore()
       snackbarStore.showError(error)
     }
   },
@@ -343,6 +368,7 @@ watch(
         @submit-answer="submitAnswer"
         @next="goToNextTask"
         @restart="startSessionWithMode('ai')"
+        @generate-flashcards="generateFlashcardsFromSession"
         @close="closeSession"
       />
     </VCol>

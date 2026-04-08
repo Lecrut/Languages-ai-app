@@ -26,7 +26,7 @@ const { t } = useI18n()
     class="h-100"
     variant="outlined"
   >
-    <VCardTitle class="text-body-large font-weight-bold pb-2">
+    <VCardTitle class="text-h5 font-weight-bold pb-2">
       {{ t('flashcards.listTitle') }}
     </VCardTitle>
     <VCardText class="pt-0">

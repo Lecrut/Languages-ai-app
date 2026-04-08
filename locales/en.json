@@ -131,6 +131,7 @@
     "answerIncorrect": "That answer is not correct.",
     "sessionCompleted": "You finished the task set.",
     "restart": "Play again",
+    "generateFlashcards": "Generate flashcards",
     "close": "Close",
     "summaryTitle": "Summary",
     "hint": "Hint",

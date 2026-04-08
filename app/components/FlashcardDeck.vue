@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useDisplay } from 'vuetify'
 import { flashcardSchema, type FlashcardDocument } from '../models/schemas/flashcard.schema'
 import { cloneFlashcardDocument } from '../helpers/flashcard-converters'
 import FlashcardDetailsPanel from './flashcards/FlashcardDetailsPanel.vue'
-import FlashcardsList from './flashcards/FlashcardsList.vue'
-import FlashcardsListDialog from './flashcards/FlashcardsListDialog.vue'
 
 const props = withDefaults(defineProps<{
   cards: FlashcardDocument[]
@@ -27,13 +24,12 @@ const emit = defineEmits<{
   delete: []
   change: [index: number]
   toggleSelection: [index: number]
+  openList: []
 }>()
 
 const { t } = useI18n()
-const { mdAndUp } = useDisplay()
 
 const localCards = ref<FlashcardDocument[]>([])
-const isListDialogOpen = ref(false)
 const isFlipped = ref(false)
 const dragOffsetX = ref(0)
 const isDragging = ref(false)
@@ -68,15 +64,6 @@ const syncUiState = () => {
   dragOffsetX.value = 0
   isDragging.value = false
   activePointerId.value = null
-}
-
-const selectCard = (index: number) => {
-  setCurrentCard(index)
-  syncUiState()
-}
-
-const openListDialog = () => {
-  isListDialogOpen.value = true
 }
 
 const updateCardAtCurrentIndex = (updatedCard: FlashcardDocument) => {
@@ -233,15 +220,6 @@ watch(
   },
   { immediate: true },
 )
-
-watch(
-  mdAndUp,
-  (value) => {
-    if (value) {
-      isListDialogOpen.value = false
-    }
-  },
-)
 </script>
 
 <template>
@@ -254,28 +232,28 @@ watch(
     <VCardText class="pa-4 pa-md-6">
       <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
         <div>
-          <p class="text-overline mb-1 text-medium-emphasis">{{ deckTitle }}</p>
-          <p class="text-body-medium mb-0 text-medium-emphasis">{{ deckSubtitle }}</p>
+          <p class="text-h4 text-md-h3 font-weight-bold mb-1">{{ deckTitle }}</p>
+          <p class="text-body-large mb-0 text-medium-emphasis">{{ deckSubtitle }}</p>
         </div>
 
         <div class="d-flex align-center ga-2 flex-wrap">
           <VChip
             color="primary"
-            variant="flat"
-          >
+            variant="flat">
             {{ currentPositionLabel }}
           </VChip>
           <VChip
             color="secondary"
-            variant="tonal"
-          >
+            variant="tonal">
             {{ progressValue }}%
           </VChip>
           <VBtn
             color="primary"
             variant="flat"
             prepend-icon="mdi-view-list"
-            @click="openListDialog"
+            size="large"
+            class="font-weight-bold text-none"
+            @click="emit('openList')"
           >
             {{ t('flashcards.openList') }}
           </VBtn>
@@ -299,247 +277,202 @@ watch(
         {{ t('flashcards.noCards') }}
       </VAlert>
 
-      <template v-else>
-        <VRow dense>
-          <VCol
-            v-if="mdAndUp"
-            cols="12"
-            md="4"
-            lg="3"
+      <VCard
+        v-else
+        class="h-100"
+        variant="elevated"
+      >
+        <VCardText class="pa-4 pa-md-6">
+          <div
+            class="mx-auto mb-6"
+            style="max-width: 820px;"
           >
-            <FlashcardsList
-              :cards="localCards"
-              :selected-index="currentIndex"
-              :selection-mode="props.selectionMode"
-              @select="selectCard"
-              @toggle-selection="(index) => emit('toggleSelection', index)"
-            />
-          </VCol>
-
-          <VCol
-            cols="12"
-            :md="mdAndUp ? 8 : 12"
-            :lg="mdAndUp ? 9 : 12"
-          >
-            <VCard
-              class="h-100"
-              variant="elevated"
+            <div
+              class="position-relative"
+              style="min-height: 420px; perspective: 1600px; touch-action: pan-y;"
             >
-              <VCardText class="pa-4 pa-md-6">
-                <div
-                  class="mx-auto mb-6"
-                  style="max-width: 820px;"
-                >
+              <div
+                v-for="(card, stackIndex) in visibleDeckCards"
+                :key="card.text + '-' + card.language + '-' + stackIndex"
+                class="position-absolute top-0 start-0 w-100 h-100"
+                :style="cardStackStyle(stackIndex)"
+              >
+                <template v-if="stackIndex === 0">
                   <div
-                    class="position-relative"
-                    style="min-height: 420px; perspective: 1600px; touch-action: pan-y;"
+                    class="position-relative h-100"
+                    :style="topCardMotionStyle"
+                    @pointerdown="onPointerDown"
+                    @pointermove="onPointerMove"
+                    @pointerup="onPointerUp"
+                    @pointercancel="onPointerCancel"
+                    @click="toggleFlip"
                   >
                     <div
-                      v-for="(card, stackIndex) in visibleDeckCards"
-                      :key="card.text + '-' + card.language + '-' + stackIndex"
-                      class="position-absolute top-0 start-0 w-100 h-100"
-                      :style="cardStackStyle(stackIndex)"
+                      class="position-relative h-100"
+                      :style="{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)', transition: 'transform 260ms ease', transformStyle: 'preserve-3d' }"
                     >
-                      <template v-if="stackIndex === 0">
-                        <div
-                          class="position-relative h-100"
-                          :style="topCardMotionStyle"
-                          @pointerdown="onPointerDown"
-                          @pointermove="onPointerMove"
-                          @pointerup="onPointerUp"
-                          @pointercancel="onPointerCancel"
-                          @click="toggleFlip"
-                        >
-                          <div
-                            class="position-relative h-100"
-                            :style="{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)', transition: 'transform 260ms ease', transformStyle: 'preserve-3d' }"
-                          >
-                            <div :style="faceBaseStyle">
-                              <VCard
-                                class="h-100 d-flex flex-column"
-                                rounded="xl"
-                                color="primary"
-                              >
-                                <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
-                                  <div class="d-flex align-center justify-space-between ga-2">
-                                    <VChip
-                                      color="primary"
-                                      variant="flat"
-                                      prepend-icon="mdi-text-box-outline"
-                                    >
-                                      {{ t('flashcards.text') }}
-                                    </VChip>
-                                    <VChip
-                                      color="white"
-                                      variant="tonal"
-                                    >
-                                      {{ t('flashcards.swipeHint') }}
-                                    </VChip>
-                                  </div>
-
-                                  <div class="d-flex flex-column ga-3 flex-grow-1 justify-center">
-                                    <p class="text-overline mb-0 text-medium-emphasis">
-                                      {{ t('flashcards.text') }}
-                                    </p>
-                                    <p class="text-h4 text-md-h3 font-weight-bold text-wrap mb-0">
-                                      {{ card.text }}
-                                    </p>
-
-                                    <VDivider class="my-2" />
-
-                                    <div class="d-flex ga-2 flex-wrap">
-                                      <VChip
-                                        color="white"
-                                        variant="tonal"
-                                      >
-                                        {{ t('flashcards.language') }}: {{ card.language }}
-                                      </VChip>
-                                      <VChip
-                                        color="white"
-                                        variant="tonal"
-                                      >
-                                        {{ t('flashcards.level') }}: {{ t(`flashcards.levels.${card.level}`) }}
-                                      </VChip>
-                                    </div>
-                                  </div>
-
-                                  <p class="text-body-small text-medium-emphasis mb-0">
-                                    {{ t('flashcards.cardTapHint') }}
-                                  </p>
-                                </VCardText>
-                              </VCard>
-                            </div>
-
-                            <div :style="[faceBaseStyle, backFaceStyle]">
-                              <VCard
-                                class="h-100 d-flex flex-column"
-                                rounded="xl"
-                                color="success"
-                              >
-                                <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
-                                  <div class="d-flex align-center justify-space-between ga-2">
-                                    <VChip
-                                      color="success"
-                                      variant="flat"
-                                      prepend-icon="mdi-translate"
-                                    >
-                                      {{ t('flashcards.translation') }}
-                                    </VChip>
-                                    <VChip
-                                      color="white"
-                                      variant="tonal"
-                                    >
-                                      {{ card.isKnown ? t('flashcards.known') : t('flashcards.unknown') }}
-                                    </VChip>
-                                  </div>
-
-                                  <div class="d-flex flex-column ga-3 flex-grow-1 justify-center">
-                                    <p class="text-overline mb-0 text-medium-emphasis">
-                                      {{ t('flashcards.translation') }}
-                                    </p>
-                                    <p class="text-h4 text-md-h3 font-weight-bold text-wrap mb-0">
-                                      {{ card.translation }}
-                                    </p>
-
-                                    <VAlert
-                                      v-if="card.hint"
-                                      type="info"
-                                      variant="tonal"
-                                      class="mt-2"
-                                    >
-                                      {{ t('flashcards.hint') }}: {{ card.hint }}
-                                    </VAlert>
-                                  </div>
-
-                                  <p class="text-body-small text-medium-emphasis mb-0">
-                                    {{ t('flashcards.cardFlipHint') }}
-                                  </p>
-                                </VCardText>
-                              </VCard>
-                            </div>
-                          </div>
-                        </div>
-                      </template>
-
-                      <template v-else>
+                      <div :style="faceBaseStyle">
                         <VCard
-                          class="h-100"
+                          class="h-100 d-flex flex-column"
                           rounded="xl"
-                          variant="outlined"
-                        >
-                          <VCardText class="d-flex flex-column justify-center h-100 pa-5 pa-md-6">
-                            <div class="d-flex align-center justify-space-between ga-2 mb-4">
+                          color="primary">
+                          <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
+                            <div class="d-flex align-center justify-space-between ga-2">
                               <VChip
-                                color="secondary"
-                                variant="tonal"
-                              >
-                                {{ t('flashcards.nextCard') }} {{ stackIndex }}
+                                color="primary"
+                                variant="flat"
+                                prepend-icon="mdi-text-box-outline">
+                                {{ t('flashcards.text') }}
                               </VChip>
                               <VChip
-                                :color="card.isKnown ? 'success' : 'warning'"
-                                variant="tonal"
-                              >
-                                {{ card.isKnown ? t('flashcards.known') : t('flashcards.unknown') }}
+                                color="white"
+                                variant="tonal">
+                                {{ t('flashcards.swipeHint') }}
                               </VChip>
                             </div>
-                            <p class="text-h5 font-weight-bold mb-2">
-                              {{ card.text }}
-                            </p>
-                            <p class="text-body-medium text-medium-emphasis mb-4">
-                              {{ card.language }} · {{ t(`flashcards.levels.${card.level}`) }}
-                            </p>
+
+                            <div class="d-flex flex-column ga-3 flex-grow-1 justify-center">
+                              <p class="text-overline mb-0 text-medium-emphasis">
+                                {{ t('flashcards.text') }}
+                              </p>
+                              <p class="text-h4 text-md-h3 font-weight-bold text-wrap mb-0">
+                                {{ card.text }}
+                              </p>
+
+                              <VDivider class="my-2" />
+
+                              <div class="d-flex ga-2 flex-wrap">
+                                <VChip
+                                  color="white"
+                                  variant="tonal">
+                                  {{ t('flashcards.language') }}: {{ card.language }}
+                                </VChip>
+                                <VChip
+                                  color="white"
+                                  variant="tonal">
+                                  {{ t('flashcards.level') }}: {{ t(`flashcards.levels.${card.level}`) }}
+                                </VChip>
+                              </div>
+                            </div>
+
                             <p class="text-body-small text-medium-emphasis mb-0">
-                              {{ t('flashcards.stackPreview') }}
+                              {{ t('flashcards.cardTapHint') }}
                             </p>
                           </VCardText>
                         </VCard>
-                      </template>
+                      </div>
+
+                      <div :style="[faceBaseStyle, backFaceStyle]">
+                        <VCard
+                          class="h-100 d-flex flex-column"
+                          rounded="xl"
+                          color="success">
+                          <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
+                            <div class="d-flex align-center justify-space-between ga-2">
+                              <VChip
+                                color="success"
+                                variant="flat"
+                                prepend-icon="mdi-translate">
+                                {{ t('flashcards.translation') }}
+                              </VChip>
+                              <VChip
+                                color="white"
+                                variant="tonal">
+                                {{ card.isKnown ? t('flashcards.known') : t('flashcards.unknown') }}
+                              </VChip>
+                            </div>
+
+                            <div class="d-flex flex-column ga-3 flex-grow-1 justify-center">
+                              <p class="text-overline mb-0 text-medium-emphasis">
+                                {{ t('flashcards.translation') }}
+                              </p>
+                              <p class="text-h4 text-md-h3 font-weight-bold text-wrap mb-0">
+                                {{ card.translation }}
+                              </p>
+
+                              <VAlert
+                                v-if="card.hint"
+                                type="info"
+                                variant="tonal"
+                                class="mt-2"
+                              >
+                                {{ t('flashcards.hint') }}: {{ card.hint }}
+                              </VAlert>
+                            </div>
+
+                            <p class="text-body-small text-medium-emphasis mb-0">
+                              {{ t('flashcards.cardFlipHint') }}
+                            </p>
+                          </VCardText>
+                        </VCard>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </template>
 
-                <div class="d-flex justify-center ga-3 flex-wrap mb-6">
-                  <VBtn
-                    color="error"
-                    variant="outlined"
-                    prepend-icon="mdi-close-circle-outline"
-                    :disabled="!activeCard"
-                    @click="handleDontKnow"
-                  >
-                    {{ t('flashcards.unknown') }}
-                  </VBtn>
-                  <VBtn
-                    color="success"
-                    variant="flat"
-                    prepend-icon="mdi-check-circle-outline"
-                    :disabled="!activeCard"
-                    @click="handleKnow"
-                  >
-                    {{ t('flashcards.known') }}
-                  </VBtn>
-                </div>
+                <template v-else>
+                  <VCard
+                    class="h-100"
+                    rounded="xl"
+                    variant="outlined">
+                    <VCardText class="d-flex flex-column justify-center h-100 pa-5 pa-md-6">
+                      <div class="d-flex align-center justify-space-between ga-2 mb-4">
+                        <VChip
+                          color="secondary"
+                          variant="tonal">
+                          {{ t('flashcards.nextCard') }} {{ stackIndex }}
+                        </VChip>
+                        <VChip
+                          :color="card.isKnown ? 'success' : 'warning'"
+                          variant="tonal">
+                          {{ card.isKnown ? t('flashcards.known') : t('flashcards.unknown') }}
+                        </VChip>
+                      </div>
+                      <p class="text-h5 font-weight-bold mb-2">
+                        {{ card.text }}
+                      </p>
+                      <p class="text-body-medium text-medium-emphasis mb-4">
+                        {{ card.language }} · {{ t(`flashcards.levels.${card.level}`) }}
+                      </p>
+                      <p class="text-body-small text-medium-emphasis mb-0">
+                        {{ t('flashcards.stackPreview') }}
+                      </p>
+                    </VCardText>
+                  </VCard>
+                </template>
+              </div>
+            </div>
+          </div>
 
-                <FlashcardDetailsPanel
-                  :card="activeCard"
-                  :allow-delete="!props.selectionMode"
-                  @save="handleSave"
-                  @delete="emit('delete')"
-                />
-              </VCardText>
-            </VCard>
-          </VCol>
-        </VRow>
-      </template>
+          <div class="d-flex justify-center ga-3 flex-wrap mb-6">
+            <VBtn
+              color="error"
+              variant="outlined"
+              prepend-icon="mdi-close-circle-outline"
+              :disabled="!activeCard"
+              @click="handleDontKnow"
+            >
+              {{ t('flashcards.unknown') }}
+            </VBtn>
+            <VBtn
+              color="success"
+              variant="flat"
+              prepend-icon="mdi-check-circle-outline"
+              :disabled="!activeCard"
+              @click="handleKnow"
+            >
+              {{ t('flashcards.known') }}
+            </VBtn>
+          </div>
+
+          <FlashcardDetailsPanel
+            :card="activeCard"
+            :allow-delete="!props.selectionMode"
+            @save="handleSave"
+            @delete="emit('delete')"
+          />
+        </VCardText>
+      </VCard>
     </VCardText>
-
-    <FlashcardsListDialog
-      v-model="isListDialogOpen"
-      :cards="localCards"
-      :selected-index="currentIndex"
-      :is-desktop="mdAndUp"
-      :selection-mode="props.selectionMode"
-      @select="selectCard"
-      @toggle-selection="(index) => emit('toggleSelection', index)"
-    />
   </VCard>
 </template>
