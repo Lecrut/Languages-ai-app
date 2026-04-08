@@ -1,6 +1,7 @@
 import type { LearningLevel } from './learning-levels'
 
 export const AI_TASK_GENERATION_TEMPERATURE = 0.4
+export const AI_MODEL = 'gemini-3.1-flash-lite-preview'
 
 export interface AiTaskPromptParams {
   subject: string

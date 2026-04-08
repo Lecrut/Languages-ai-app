@@ -4,6 +4,7 @@ import { GoogleAIBackend, getAI, getGenerativeModel } from 'firebase/ai'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import {
+  AI_MODEL,
   AI_TASK_GENERATION_TEMPERATURE,
   AI_TASK_SYSTEM_INSTRUCTION,
   buildAiTaskUserPrompt,
@@ -29,7 +30,7 @@ export const useFirebase = () => {
   const ai = getAI(app, { backend: new GoogleAIBackend() })
 
   const getTaskGenerationModel = () => getGenerativeModel(ai, {
-    model: 'gemini-2.5-flash',
+    model: AI_MODEL,
     systemInstruction: AI_TASK_SYSTEM_INSTRUCTION,
     generationConfig: {
       responseMimeType: 'application/json',
@@ -51,7 +52,7 @@ export const useFirebase = () => {
     temperature?: number
   }) => {
     const model = getGenerativeModel(ai, {
-      model: 'gemini-2.5-flash',
+      model: AI_MODEL,
       systemInstruction: params.systemInstruction,
       generationConfig: {
         responseMimeType: 'application/json',
