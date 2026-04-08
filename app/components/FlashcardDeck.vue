@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { flashcardSchema, type FlashcardDocument } from '../models/schemas/flashcard.schema'
 import { cloneFlashcardDocument } from '../helpers/flashcard-converters'
+import type { FlashcardListItem } from '../stores/use-flashcards-store'
 
 const props = withDefaults(defineProps<{
-  cards: FlashcardDocument[]
+  cards: FlashcardListItem[]
   title?: string
   subtitle?: string
   selectionMode?: boolean
@@ -18,9 +18,9 @@ const currentIndex = defineModel<number>({ default: 0 })
 const showKnownCards = defineModel<boolean>('showKnownCards', { default: false })
 
 const emit = defineEmits<{
-  know: [card: FlashcardDocument]
-  dontKnow: [card: FlashcardDocument]
-  save: [card: FlashcardDocument]
+  know: [card: FlashcardListItem]
+  dontKnow: [card: FlashcardListItem]
+  save: [card: FlashcardListItem]
   delete: []
   change: [index: number]
   toggleSelection: [index: number]
@@ -29,7 +29,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const localCards = ref<FlashcardDocument[]>([])
+const localCards = ref<FlashcardListItem[]>([])
 const isFlipped = ref(false)
 const dragOffsetX = ref(0)
 const isDragging = ref(false)
@@ -66,7 +66,7 @@ const syncUiState = () => {
   activePointerId.value = null
 }
 
-const updateCardAtCurrentIndex = (updatedCard: FlashcardDocument) => {
+const updateCardAtCurrentIndex = (updatedCard: FlashcardListItem) => {
   if (!activeCard.value) {
     return
   }
@@ -77,7 +77,13 @@ const updateCardAtCurrentIndex = (updatedCard: FlashcardDocument) => {
 }
 
 const moveToNextCardIfPossible = () => {
+  if (totalCards.value <= 1) {
+    setCurrentCard(0)
+    return
+  }
+
   if (currentIndex.value >= totalCards.value - 1) {
+    setCurrentCard(0)
     return
   }
 
@@ -89,11 +95,11 @@ const handleKnow = () => {
     return
   }
 
-  const updatedCard = flashcardSchema.parse({
+  const updatedCard: FlashcardListItem = {
     ...activeCard.value,
     isKnown: true,
     knownAt: new Date(),
-  })
+  }
 
   updateCardAtCurrentIndex(updatedCard)
   emit('know', updatedCard)
@@ -106,11 +112,11 @@ const handleDontKnow = () => {
     return
   }
 
-  const updatedCard = flashcardSchema.parse({
+  const updatedCard: FlashcardListItem = {
     ...activeCard.value,
     isKnown: false,
     knownAt: null,
-  })
+  }
 
   updateCardAtCurrentIndex(updatedCard)
   emit('dontKnow', updatedCard)
@@ -118,7 +124,7 @@ const handleDontKnow = () => {
   syncUiState()
 }
 
-const handleSave = (updatedCard: FlashcardDocument) => {
+const handleSave = (updatedCard: FlashcardListItem) => {
   updateCardAtCurrentIndex(updatedCard)
   emit('save', updatedCard)
 }
@@ -315,7 +321,7 @@ watch(
             >
               <div
                 v-for="(card, stackIndex) in visibleDeckCards"
-                :key="card.text + '-' + card.language + '-' + stackIndex"
+                :key="`${card.id}-${stackIndex}`"
                 class="position-absolute top-0 start-0 w-100 h-100"
                 :style="cardStackStyle(stackIndex)"
               >

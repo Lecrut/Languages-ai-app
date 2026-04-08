@@ -3,21 +3,20 @@ import { computed, ref, toRef, watch } from 'vue'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useFlashcardEditor } from '../../composables/useFlashcardEditor'
 import { fromDateTimeLocalValue } from '../../helpers/flashcard-converters'
-import { flashcardSchema } from '../../models/schemas/flashcard.schema'
-import type { FlashcardDocument } from '../../models/schemas/flashcard.schema'
+import type { FlashcardListItem } from '../../stores/use-flashcards-store'
 import FlashcardDetailsViewMode from './FlashcardDetailsViewMode.vue'
 import FlashcardDetailsEditorMode from './FlashcardDetailsEditorMode.vue'
 import FlashcardDeleteDialog from './FlashcardDeleteDialog.vue'
 
 const props = defineProps<{
-  card: FlashcardDocument | null
+  card: FlashcardListItem | null
   allowDelete?: boolean
   autoEditOnCardChange?: boolean
   forceEditMode?: boolean
 }>()
 
 const emit = defineEmits<{
-  save: [card: FlashcardDocument]
+  save: [card: FlashcardListItem]
   delete: []
 }>()
 
@@ -48,17 +47,17 @@ const handleSave = () => {
   }
 }
 
-const handleDraftCardUpdate = (card: FlashcardDocument) => {
+const handleDraftCardUpdate = (card: FlashcardListItem) => {
   draftCard.value = card
 
   if (!isForceEditMode.value) {
     return
   }
 
-  const liveUpdatedCard = flashcardSchema.parse({
+  const liveUpdatedCard: FlashcardListItem = {
     ...card,
     knownAt: fromDateTimeLocalValue(knownAtInput.value),
-  })
+  }
 
   emit('save', liveUpdatedCard)
 }
@@ -70,10 +69,10 @@ const handleKnownAtInputUpdate = (value: string) => {
     return
   }
 
-  const liveUpdatedCard = flashcardSchema.parse({
+  const liveUpdatedCard: FlashcardListItem = {
     ...draftCard.value,
     knownAt: fromDateTimeLocalValue(value),
-  })
+  }
 
   emit('save', liveUpdatedCard)
 }

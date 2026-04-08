@@ -2,6 +2,7 @@
 import type { FlashcardDocument } from '../../models/schemas/flashcard.schema'
 
 interface FlashcardListViewItem extends FlashcardDocument {
+  id: string
   selectedForAdd?: boolean
   disabledDuplicate?: boolean
 }
@@ -26,7 +27,7 @@ const { t } = useI18n()
   <div class="d-flex flex-column ga-3">
     <VCard
       v-for="(card, index) in cards"
-      :key="card.text + '-' + card.language + '-' + index"
+      :key="card.id"
       :variant="index === selectedIndex ? 'tonal' : 'elevated'"
       rounded="lg"
       class="cursor-pointer"

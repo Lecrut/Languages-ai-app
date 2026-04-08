@@ -32,7 +32,7 @@ export const fromDateTimeLocalValue = (value: string): Date | null => {
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate
 }
 
-export const cloneFlashcardDocument = (card: FlashcardDocument): FlashcardDocument => ({
+export const cloneFlashcardDocument = <TCard extends FlashcardDocument>(card: TCard): TCard => ({
   ...card,
   knownAt: card.knownAt ? new Date(card.knownAt) : null,
   createdAt: card.createdAt ? new Date(card.createdAt) : null,

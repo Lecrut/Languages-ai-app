@@ -6,7 +6,7 @@ import FlashcardDetailsPanel from '../../components/flashcards/FlashcardDetailsP
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useFlashcardUpdate } from '../../composables/useFlashcardUpdate'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
-import type { FlashcardDocument } from '../../models/schemas/flashcard.schema'
+import type { FlashcardListItem } from '../../stores/use-flashcards-store'
 
 definePageMeta({
   middleware: 'auth',
@@ -46,7 +46,7 @@ const syncCards = async (uid: string | undefined) => {
   await flashcardsStore.fetchSavedCards(uid)
 }
 
-const updateCard = async (card: FlashcardDocument) => {
+const updateCard = async (card: FlashcardListItem) => {
   const sourceCard = currentCards.value.find(existingCard => existingCard.id === card.id)
   if (!sourceCard) {
     return
@@ -300,6 +300,8 @@ watch(
         v-model="currentIndex"
         v-model:show-known-cards="showKnownCards"
         :cards="deckCards"
+        @know="updateCard"
+        @dont-know="updateCard"
         @save="updateCard"
         @delete="deleteCardById(selectedDeckCard?.id)"
         @open-list="openListView"
