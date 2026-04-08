@@ -2,15 +2,14 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { doc, getDoc, runTransaction, setDoc } from 'firebase/firestore'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
-import type { AuthUser } from '../models/auth-user'
+import type { AuthUser } from '../models/types/auth-user'
 import {
   applyStreakCompletion,
   createDefaultStreakInfo,
   createDefaultFirestoreStreakInfo,
   mapFirestoreStreakInfo,
-  type FirestoreStreakInfo,
-  type StreakInfo,
-} from '../models/streak-info'
+} from '../helpers/streak-info'
+import type { FirestoreStreakInfo, StreakInfo } from '../models/types/streak-info'
 import { useFirebase } from '../composables/useFirebase'
 import { useSharedStore } from './use-shared-store'
 

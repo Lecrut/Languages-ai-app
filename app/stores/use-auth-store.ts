@@ -14,8 +14,8 @@ import {
   verifyPasswordResetCode,
 } from 'firebase/auth'
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
-import type { AuthUser } from '../models/auth-user'
-import { createDefaultFirestoreStreakInfo } from '../models/streak-info'
+import type { AuthUser } from '../models/types/auth-user'
+import { createDefaultFirestoreStreakInfo } from '../helpers/streak-info'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import { DEFAULT_LEARNING_LEVEL } from '../constants/learning-levels'
 import { TASKS_PER_SESSION_DEFAULT } from '../constants/task-session-settings'

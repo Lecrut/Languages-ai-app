@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { DocumentData, DocumentReference } from 'firebase/firestore'
-import { LEARNING_LEVELS } from '../constants/learning-levels'
-import { TASK_TYPES } from './task.types'
+import { LEARNING_LEVELS } from '../../constants/learning-levels'
+import { TASK_TYPES } from '../types/task'
 
 const referenceSchema = z.custom<DocumentReference<DocumentData>>(
   value => typeof value === 'object' && value !== null,

@@ -20,6 +20,8 @@ export interface ResultTaskPayload {
   question: string
   correctAnswer: string
   userAnswer: string
+  language: string | null
+  level: string | null
 }
 
 export interface ResultSessionTaskItem {
@@ -28,6 +30,8 @@ export interface ResultSessionTaskItem {
   question: string
   correctAnswer: string
   userAnswer: string
+  language: string | null
+  level: string | null
 }
 
 export interface ResultSessionItem {

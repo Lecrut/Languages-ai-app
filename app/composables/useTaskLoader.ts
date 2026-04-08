@@ -100,7 +100,7 @@ export function useTaskLoader() {
 
   const generateAiTasks = async (promptParams: Omit<AiTaskPromptParams, 'tasksCount'>, count: number): Promise<TaskSessionTask[]> => {
     try {
-      const { parseAiGeneratedTaskList } = await import('../models/ai-generated-task.schema')
+      const { parseAiGeneratedTaskList } = await import('../models/schemas/ai-generated-task.schema')
       const { addDoc } = await import('firebase/firestore')
 
       const rawJson = await generateTasksJsonWithAi({

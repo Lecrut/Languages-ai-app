@@ -45,5 +45,23 @@ export const useFirebase = () => {
     return result.response.text()
   }
 
-  return { app, auth, db, getTaskGenerationModel, generateTasksJsonWithAi }
+  const generateJsonWithAi = async (params: {
+    prompt: string
+    systemInstruction: string
+    temperature?: number
+  }) => {
+    const model = getGenerativeModel(ai, {
+      model: 'gemini-2.5-flash',
+      systemInstruction: params.systemInstruction,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: params.temperature ?? AI_TASK_GENERATION_TEMPERATURE,
+      },
+    })
+
+    const result = await model.generateContent(params.prompt)
+    return result.response.text()
+  }
+
+  return { app, auth, db, getTaskGenerationModel, generateTasksJsonWithAi, generateJsonWithAi }
 }

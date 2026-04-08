@@ -30,6 +30,7 @@ Your objective is to build a robust, scalable, and beautifully structured person
 - **Reactivity:** Use explicit `ref<Type>()`. Do not use `reactive()` unless dealing with a deeply nested, cohesive data object.
 - **Props & Models:** Use Vue 3.5+ reactive destructuring for props or `toRefs()`. Strictly use `defineModel()` for two-way bindings. Use `defineEmits<{ ... }>()`.
 - **Pinia:** MUST be **Setup Stores** (Composition API). Return refs and functions. NEVER use the Options API (`state`, `actions`) or `this.`.
+- **Shared Store Pattern:** All feature stores should use `useSharedStore()` for global loading and error state unless there is a clear exception. Keep store-specific refs only for feature-specific state.
 
 # Vue SFC Structure
 1. `<script setup lang="ts">` (Top)
@@ -38,7 +39,8 @@ Your objective is to build a robust, scalable, and beautifully structured person
 
 # Directory Structure
 - `/constants`: Enums and constant values (e.g., Firebase collection names).
-- `/models`: TypeScript interfaces, Zod schemas, types.
+- `/models/schemas`: Zod schemas and parsers used for validation.
+- `/models/types`: Domain interfaces, payloads, and shared type aliases.
 - `/helpers`: Pure functions (no Vue reactivity).
 - `/composables`: Reusable logic (e.g., `useSession.ts`).
 - `/stores`: Pinia setup stores.

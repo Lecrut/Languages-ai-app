@@ -1,5 +1,5 @@
 import type { DocumentData, DocumentReference } from 'firebase/firestore'
-import type { LearningLevel } from '../constants/learning-levels'
+import type { LearningLevel } from '../../constants/learning-levels'
 
 export const TASK_TYPES = [
   'multiple_choice',

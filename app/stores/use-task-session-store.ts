@@ -5,9 +5,9 @@ import { TASKS_PER_SESSION_DEFAULT, clampTasksPerSession } from '../constants/ta
 import { TASK_SESSION_STORAGE } from '../constants/task-session-storage'
 import type { AiTaskPromptParams } from '../constants/ai-task-prompts'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
-import { parseAiGeneratedTaskList } from '../models/ai-generated-task.schema'
-import type { TaskDocument } from '../models/task.types'
-import type { ResultTaskPayload } from '../models/result'
+import { parseAiGeneratedTaskList } from '../models/schemas/ai-generated-task.schema'
+import type { TaskDocument } from '../models/types/task'
+import type { ResultTaskPayload } from '../models/types/result'
 import { normalizeAnswer } from '../helpers/normalize-answer'
 import { useFirebase } from '../composables/useFirebase'
 import { useSnackbarStore } from './use-snackbar-store'
@@ -81,6 +81,8 @@ export const useTaskSessionStore = defineStore('task-session', () => {
       question: task.question,
       correctAnswer: task.correctAnswer,
       userAnswer: evaluation.userAnswer,
+      language: task.targetLanguage ?? task.subject ?? null,
+      level: task.level ?? null,
     }]
   }))
 

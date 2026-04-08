@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { TASK_TYPES } from './task.types'
-import { LEARNING_LEVELS } from '../constants/learning-levels'
+import { TASK_TYPES } from '../types/task'
+import { LEARNING_LEVELS } from '../../constants/learning-levels'
 
 const baseGeneratedTaskSchema = z.object({
   targetLanguage: z.string().trim().min(2),

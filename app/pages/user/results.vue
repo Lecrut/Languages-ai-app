@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { formatDateTime } from '../../helpers/format-date'
-import { getDisplayCurrentStreakCount } from '../../models/streak-info'
 import { useAuthStore } from '../../stores/use-auth-store'
+import { useFlashcardsStore } from '../../stores/use-flashcards-store'
 import { useResultsStore } from '../../stores/use-results-store'
+import { useSnackbarStore } from '../../stores/use-snackbar-store'
 import { useStreakInfoStore } from '../../stores/use-streak-info-store'
 import { useDisplay } from 'vuetify'
 
@@ -14,10 +15,15 @@ definePageMeta({
 const { t, locale } = useI18n()
 const { lgAndUp } = useDisplay()
 const authStore = useAuthStore()
+const flashcardsStore = useFlashcardsStore()
 const resultsStore = useResultsStore()
+const snackbarStore = useSnackbarStore()
 const streakInfoStore = useStreakInfoStore()
+const localePath = useLocalePath()
+const router = useRouter()
 const selectedSessionId = ref<string | null>(null)
 const detailsDialogVisible = ref(false)
+const generatingFlashcards = ref(false)
 const { setPageTitle } = usePageHead()
 
 onMounted(() => {
@@ -52,7 +58,6 @@ const formatStreakDate = (date: Date | undefined) => {
   }).format(date)
 }
 
-const currentStreakCount = computed(() => getDisplayCurrentStreakCount(streakInfoStore.streakInfo))
 const longestStreakCount = computed(() => streakInfoStore.streakInfo?.longestCount ?? 0)
 const longestStreakRangeLabel = computed(() => t('results.streakRange', {
   from: formatStreakDate(streakInfoStore.streakInfo?.longest.from),
@@ -94,6 +99,34 @@ const loadMoreSessions = async () => {
   catch (_e) {}
 }
 
+const generateFlashcardsFromResults = async () => {
+  const uid = authStore.user?.uid
+  if (!uid) {
+    return
+  }
+
+  generatingFlashcards.value = true
+
+  try {
+    const allTasks = await resultsStore.fetchAllResultTasks(uid)
+
+    if (allTasks.length === 0) {
+      snackbarStore.showError(t('results.noTasksForFlashcards'))
+      return
+    }
+
+    await flashcardsStore.generateFromTaskResults(uid, allTasks)
+    await router.push(localePath('/user/flashcards'))
+  }
+  catch (caughtError) {
+    const message = caughtError instanceof Error ? caughtError.message : t('results.flashcardsGenerateError')
+    snackbarStore.showError(message)
+  }
+  finally {
+    generatingFlashcards.value = false
+  }
+}
+
 watch(
   () => authStore.user?.uid,
   async (uid) => {
@@ -102,7 +135,7 @@ watch(
     }
 
     try {
-      await resultsStore.fetchLatestSessions(uid)
+      await resultsStore.ensureLatestSessions(uid)
     }
     // eslint-disable-next-line
     catch (_e) {}
@@ -126,7 +159,7 @@ watch(
     :class="{ 'results-board--desktop': lgAndUp }"
   >
     <VCard class="results-panel results-panel--stats results-panel--stats-card">
-      <VCardTitle class="text-headline-small">{{ t('results.statsTitle') }}</VCardTitle>
+      <VCardTitle class="text-headline-small px-6 pt-5 pb-2">{{ t('results.statsTitle') }}</VCardTitle>
       <VCardText class="results-panel__body d-flex flex-column ga-4">
         <VProgressCircular
           :model-value="summaryAccuracy"
@@ -171,12 +204,23 @@ watch(
     </VCard>
 
     <VCard class="results-panel results-panel--sessions">
-      <VCardTitle class="text-headline-large">{{ t('results.title') }}</VCardTitle>
-      <VCardText class="pb-2">
+      <VCardTitle class="text-headline-large px-6 pt-5 pb-2">{{ t('results.title') }}</VCardTitle>
+      <VCardText class="px-6 pb-2">
         {{ t('results.description') }}
       </VCardText>
 
       <div class="results-panel__body px-6 pb-6">
+        <div class="d-flex justify-center mb-4">
+          <VBtn
+            color="primary"
+            variant="flat"
+            prepend-icon="mdi-cards-outline"
+            :loading="generatingFlashcards || flashcardsStore.generating"
+            @click="generateFlashcardsFromResults"
+          >
+            {{ t('results.generateFlashcards') }}
+          </VBtn>
+        </div>
         <div
           v-if="!resultsStore.sessions.length"
           class="mt-2"
@@ -243,7 +287,7 @@ watch(
       v-if="lgAndUp"
       class="results-panel results-panel--details"
     >
-      <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
+      <VCardTitle class="text-headline-small px-6 pt-5 pb-2">{{ t('results.detailsTitle') }}</VCardTitle>
 
       <div
         v-if="selectedSession"
@@ -269,6 +313,24 @@ watch(
                 <div class="d-flex align-center ga-2">
                   <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
                   <span class="text-label-large">{{ task.question }}</span>
+                </div>
+                <div class="d-flex ga-2 flex-wrap">
+                  <VChip
+                    v-if="task.language"
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                  >
+                    {{ t('results.taskLanguageLabel', { value: task.language }) }}
+                  </VChip>
+                  <VChip
+                    v-if="task.level"
+                    color="secondary"
+                    variant="tonal"
+                    size="small"
+                  >
+                    {{ t('results.taskLevelLabel', { value: task.level }) }}
+                  </VChip>
                 </div>
                 <p class="mb-0 text-body-medium">
                   {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}
@@ -302,7 +364,7 @@ watch(
         max-width="720"
       >
         <VCard>
-          <VCardTitle class="text-headline-small">{{ t('results.detailsTitle') }}</VCardTitle>
+          <VCardTitle class="text-headline-small px-6 pt-5 pb-2">{{ t('results.detailsTitle') }}</VCardTitle>
           <VCardText
             v-if="selectedSession"
             class="d-flex flex-column ga-3"
@@ -321,6 +383,24 @@ watch(
                 <div class="d-flex align-center ga-2">
                   <VIcon :icon="task.isPassed ? 'mdi-check' : 'mdi-close'" />
                   <span class="text-label-large">{{ task.question }}</span>
+                </div>
+                <div class="d-flex ga-2 flex-wrap">
+                  <VChip
+                    v-if="task.language"
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                  >
+                    {{ t('results.taskLanguageLabel', { value: task.language }) }}
+                  </VChip>
+                  <VChip
+                    v-if="task.level"
+                    color="secondary"
+                    variant="tonal"
+                    size="small"
+                  >
+                    {{ t('results.taskLevelLabel', { value: task.level }) }}
+                  </VChip>
                 </div>
                 <p class="mb-0 text-body-medium">
                   {{ t('results.userAnswerLabel') }}: {{ task.userAnswer }}

@@ -17,8 +17,8 @@ import {
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
-import type { ResultSessionItem, ResultTaskPayload } from '../models/result'
-import type { SaveTaskResultPayload } from '../models/task-result'
+import type { ResultSessionItem, ResultTaskPayload } from '../models/types/result'
+import type { SaveTaskResultPayload } from '../models/types/task-result'
 import { useFirebase } from '../composables/useFirebase'
 import { useSharedStore } from './use-shared-store'
 import { useStreakInfoStore } from './use-streak-info-store'
@@ -44,6 +44,7 @@ export const useResultsStore = defineStore('results', () => {
   const hasMore = ref(true)
   const loadingMore = ref(false)
   const lastVisibleDoc = ref<QueryDocumentSnapshot<DocumentData> | null>(null)
+  const loadedForUid = ref<string | null>(null)
   const saving = computed(() => sharedStore.loading)
   const error = computed(() => sharedStore.error)
 
@@ -78,12 +79,14 @@ export const useResultsStore = defineStore('results', () => {
 
     try {
       const userReference = doc(db, FIREBASE_COLLECTIONS.users, uid)
-      const task = taskResults.map(({ taskId, isPassed, question, correctAnswer, userAnswer }) => ({
+      const task = taskResults.map(({ taskId, isPassed, question, correctAnswer, userAnswer, language, level }) => ({
         taskReference: doc(db, FIREBASE_COLLECTIONS.tasks, taskId),
         isPassed,
         question,
         correctAnswer,
         userAnswer,
+        language,
+        level,
       }))
 
       await withTimeout(
@@ -110,6 +113,8 @@ export const useResultsStore = defineStore('results', () => {
         question: taskEntry.question,
         correctAnswer: taskEntry.correctAnswer,
         userAnswer: taskEntry.userAnswer,
+        language: taskEntry.language,
+        level: taskEntry.level,
       }))
       const correctCount = mappedTasks.filter(taskEntry => taskEntry.isPassed).length
       const incorrectCount = mappedTasks.length - correctCount
@@ -144,6 +149,7 @@ export const useResultsStore = defineStore('results', () => {
     hasMore.value = true
     loadingMore.value = false
     lastVisibleDoc.value = null
+    loadedForUid.value = null
   }
 
   const fetchLatestSessions = async (uid: string, options?: { loadMore?: boolean }) => {
@@ -196,6 +202,8 @@ export const useResultsStore = defineStore('results', () => {
             question?: string
             correctAnswer?: string
             userAnswer?: string
+            language?: string | null
+            level?: string | null
           }>
         }
 
@@ -206,6 +214,8 @@ export const useResultsStore = defineStore('results', () => {
           question: taskEntry.question ?? '-',
           correctAnswer: taskEntry.correctAnswer ?? '-',
           userAnswer: taskEntry.userAnswer ?? '-',
+          language: taskEntry.language ?? null,
+          level: taskEntry.level ?? null,
         }))
         const correctCount = mappedTasks.filter(taskEntry => taskEntry.isPassed).length
         const incorrectCount = taskEntries.length - correctCount
@@ -223,6 +233,7 @@ export const useResultsStore = defineStore('results', () => {
       sessions.value = isLoadMore ? [...sessions.value, ...nextSessions] : nextSessions
       hasMore.value = snapshot.docs.length === PAGE_SIZE
       lastVisibleDoc.value = snapshot.docs.at(-1) ?? null
+  loadedForUid.value = uid
     }
     catch (caughtError) {
       sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Failed to fetch result sessions')
@@ -234,6 +245,56 @@ export const useResultsStore = defineStore('results', () => {
     }
   }
 
+  const ensureLatestSessions = async (uid: string) => {
+    if (!uid) {
+      return
+    }
+
+    if (loadedForUid.value === uid && sessions.value.length > 0) {
+      return
+    }
+
+    await fetchLatestSessions(uid)
+  }
+
+  const fetchAllResultTasks = async (uid: string): Promise<ResultTaskPayload[]> => {
+    const { db } = useFirebase()
+
+    const userReference = doc(db, FIREBASE_COLLECTIONS.users, uid)
+    const snapshot = await withTimeout(
+      getDocs(query(
+        collection(db, FIREBASE_COLLECTIONS.results),
+        where('userReference', '==', userReference),
+        orderBy('date', 'desc'),
+      )),
+      'Fetching all result tasks timed out',
+    )
+
+    return snapshot.docs.flatMap((sessionDocument) => {
+      const data = sessionDocument.data() as {
+        task?: Array<{
+          taskReference?: { id?: string }
+          isPassed?: boolean
+          question?: string
+          correctAnswer?: string
+          userAnswer?: string
+          language?: string | null
+          level?: string | null
+        }>
+      }
+
+      return (data.task ?? []).map((taskEntry, index) => ({
+        taskId: taskEntry.taskReference?.id ?? `${sessionDocument.id}-task-${index}`,
+        isPassed: Boolean(taskEntry.isPassed),
+        question: taskEntry.question ?? '-',
+        correctAnswer: taskEntry.correctAnswer ?? '-',
+        userAnswer: taskEntry.userAnswer ?? '-',
+        language: taskEntry.language ?? null,
+        level: taskEntry.level ?? null,
+      }))
+    })
+  }
+
   return {
     sessions,
     hasMore,
@@ -243,6 +304,8 @@ export const useResultsStore = defineStore('results', () => {
     saveTaskResult,
     saveResultSummary,
     fetchLatestSessions,
+    ensureLatestSessions,
+    fetchAllResultTasks,
     reset,
   }
 })

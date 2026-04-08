@@ -15,8 +15,8 @@ import {
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import { TASKS_PER_SESSION_DEFAULT, clampTasksPerSession } from '../constants/task-session-settings'
 import { getDefaultNicknameFromEmail } from '../helpers/auth-helpers'
-import type { AuthUser } from '../models/auth-user'
-import type { UserProfile, UserProfileUpdatePayload } from '../models/user-profile'
+import type { AuthUser } from '../models/types/auth-user'
+import type { UserProfile, UserProfileUpdatePayload } from '../models/types/user-profile'
 import { useFirebase } from '../composables/useFirebase'
 import { useSharedStore } from './use-shared-store'
 

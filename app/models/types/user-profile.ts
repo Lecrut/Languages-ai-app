@@ -1,4 +1,4 @@
-import type { LearningLevel } from '../constants/learning-levels'
+import type { LearningLevel } from '../../constants/learning-levels'
 
 export interface UserProfile {
   uid: string

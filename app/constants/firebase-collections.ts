@@ -3,4 +3,5 @@ export const FIREBASE_COLLECTIONS = {
   tasks: 'tasks',
   results: 'results',
   streakInfo: 'streak',
+  flashcards: 'flashcards',
 } as const

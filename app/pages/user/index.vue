@@ -258,6 +258,28 @@ watch(
           <VCardTitle class="text-headline-large mb-2 text-center">{{ t('play.title') }}</VCardTitle>
           <!-- <p class="text-body-large mb-6 text-center text-medium-emphasis">{{ t('play.description') }}</p> -->
 
+          <VCard
+            variant="tonal"
+            color="primary"
+            class="mb-6"
+          >
+            <VCardText class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3">
+              <div>
+                <p class="text-body-large font-weight-bold mb-1">{{ t('play.flashcardsTitle') }}</p>
+                <p class="text-body-small mb-0 text-medium-emphasis">{{ t('play.flashcardsDescription') }}</p>
+              </div>
+
+              <VBtn
+                color="primary"
+                variant="flat"
+                prepend-icon="mdi-cards-outline"
+                :to="localePath('/user/flashcards')"
+              >
+                {{ t('play.flashcardsCta') }}
+              </VBtn>
+            </VCardText>
+          </VCard>
+
           <div class="mb-6">
             <p class="text-body-medium font-weight-bold mb-4">{{ t('play.selectTopic') || 'Select a topic:' }}</p>
             <VSelect

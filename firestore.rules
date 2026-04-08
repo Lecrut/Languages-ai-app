@@ -71,6 +71,19 @@ service cloud.firestore {
       allow update, delete: if isOwner(uid) && isVerifiedEmail();
     }
 
+    // flashcards/{flashcardId} - fiszki użytkownika
+    match /flashcards/{flashcardId} {
+      allow read: if isVerifiedEmail()
+        && resource.data.userRef == userDocRef(request.auth.uid);
+
+      allow create: if isVerifiedEmail()
+        && request.resource.data.userRef == userDocRef(request.auth.uid);
+
+      allow update, delete: if isVerifiedEmail()
+        && resource.data.userRef == userDocRef(request.auth.uid)
+        && request.resource.data.userRef == userDocRef(request.auth.uid);
+    }
+
     // Domyślnie blokuj wszystko inne
     match /{document=**} {
       allow read, write: if false;

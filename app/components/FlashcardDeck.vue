@@ -1,0 +1,545 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
+import { flashcardSchema, type FlashcardDocument } from '../models/schemas/flashcard.schema'
+import { cloneFlashcardDocument } from '../helpers/flashcard-converters'
+import FlashcardDetailsPanel from './flashcards/FlashcardDetailsPanel.vue'
+import FlashcardsList from './flashcards/FlashcardsList.vue'
+import FlashcardsListDialog from './flashcards/FlashcardsListDialog.vue'
+
+const props = withDefaults(defineProps<{
+  cards: FlashcardDocument[]
+  title?: string
+  subtitle?: string
+  selectionMode?: boolean
+}>(), {
+  title: undefined,
+  subtitle: undefined,
+  selectionMode: false,
+})
+
+const currentIndex = defineModel<number>({ default: 0 })
+
+const emit = defineEmits<{
+  know: [card: FlashcardDocument]
+  dontKnow: [card: FlashcardDocument]
+  save: [card: FlashcardDocument]
+  delete: []
+  change: [index: number]
+  toggleSelection: [index: number]
+}>()
+
+const { t } = useI18n()
+const { mdAndUp } = useDisplay()
+
+const localCards = ref<FlashcardDocument[]>([])
+const isListDialogOpen = ref(false)
+const isFlipped = ref(false)
+const dragOffsetX = ref(0)
+const isDragging = ref(false)
+const activePointerId = ref<number | null>(null)
+const dragStartX = ref(0)
+
+const totalCards = computed(() => localCards.value.length)
+const activeCard = computed(() => localCards.value[currentIndex.value] ?? null)
+const visibleDeckCards = computed(() => localCards.value.slice(currentIndex.value, currentIndex.value + 3))
+const hasCards = computed(() => totalCards.value > 0)
+const deckTitle = computed(() => props.title ?? t('flashcards.title'))
+const deckSubtitle = computed(() => props.subtitle ?? t('flashcards.subtitle'))
+const currentPositionLabel = computed(() => (totalCards.value ? `${Math.min(currentIndex.value + 1, totalCards.value)} / ${totalCards.value}` : '0 / 0'))
+const progressValue = computed(() => (totalCards.value ? Math.round(((currentIndex.value + 1) / totalCards.value) * 100) : 0))
+
+const clampIndex = (index: number) => {
+  if (!localCards.value.length) {
+    return 0
+  }
+
+  return Math.max(0, Math.min(index, localCards.value.length - 1))
+}
+
+const setCurrentCard = (index: number) => {
+  const clampedIndex = clampIndex(index)
+  currentIndex.value = clampedIndex
+  emit('change', clampedIndex)
+}
+
+const syncUiState = () => {
+  isFlipped.value = false
+  dragOffsetX.value = 0
+  isDragging.value = false
+  activePointerId.value = null
+}
+
+const selectCard = (index: number) => {
+  setCurrentCard(index)
+  syncUiState()
+}
+
+const openListDialog = () => {
+  isListDialogOpen.value = true
+}
+
+const updateCardAtCurrentIndex = (updatedCard: FlashcardDocument) => {
+  if (!activeCard.value) {
+    return
+  }
+
+  const nextCards = [...localCards.value]
+  nextCards[currentIndex.value] = cloneFlashcardDocument(updatedCard)
+  localCards.value = nextCards
+}
+
+const moveToNextCardIfPossible = () => {
+  if (currentIndex.value >= totalCards.value - 1) {
+    return
+  }
+
+  setCurrentCard(currentIndex.value + 1)
+}
+
+const handleKnow = () => {
+  if (!activeCard.value) {
+    return
+  }
+
+  const updatedCard = flashcardSchema.parse({
+    ...activeCard.value,
+    isKnown: true,
+    knownAt: new Date(),
+  })
+
+  updateCardAtCurrentIndex(updatedCard)
+  emit('know', updatedCard)
+  moveToNextCardIfPossible()
+  syncUiState()
+}
+
+const handleDontKnow = () => {
+  if (!activeCard.value) {
+    return
+  }
+
+  const updatedCard = flashcardSchema.parse({
+    ...activeCard.value,
+    isKnown: false,
+    knownAt: null,
+  })
+
+  updateCardAtCurrentIndex(updatedCard)
+  emit('dontKnow', updatedCard)
+  moveToNextCardIfPossible()
+  syncUiState()
+}
+
+const handleSave = (updatedCard: FlashcardDocument) => {
+  updateCardAtCurrentIndex(updatedCard)
+  emit('save', updatedCard)
+}
+
+const toggleFlip = () => {
+  if (!activeCard.value || isDragging.value) {
+    return
+  }
+
+  isFlipped.value = !isFlipped.value
+}
+
+const cardStackStyle = (stackIndex: number) => ({
+  transform: `translateY(${stackIndex * 14}px) scale(${1 - stackIndex * 0.03})`,
+  zIndex: 20 - stackIndex,
+  opacity: stackIndex === 0 ? 1 : Math.max(0.72, 1 - stackIndex * 0.08),
+})
+
+const topCardMotionStyle = computed(() => ({
+  transform: `translateX(${dragOffsetX.value}px) rotate(${dragOffsetX.value / 32}deg)`,
+  transition: isDragging.value ? 'none' : 'transform 220ms ease, opacity 220ms ease',
+}))
+
+const faceBaseStyle = {
+  backfaceVisibility: 'hidden',
+  WebkitBackfaceVisibility: 'hidden',
+  position: 'absolute',
+  inset: '0',
+  width: '100%',
+  height: '100%',
+} as const
+
+const backFaceStyle = {
+  transform: 'rotateY(180deg)',
+} as const
+
+const resetDragState = () => {
+  dragOffsetX.value = 0
+  isDragging.value = false
+  activePointerId.value = null
+}
+
+const onPointerDown = (event: PointerEvent) => {
+  if (!activeCard.value) {
+    return
+  }
+
+  activePointerId.value = event.pointerId
+  dragStartX.value = event.clientX
+  dragOffsetX.value = 0
+  isDragging.value = true
+
+  const target = event.currentTarget
+  if (target instanceof HTMLElement) {
+    target.setPointerCapture(event.pointerId)
+  }
+}
+
+const onPointerMove = (event: PointerEvent) => {
+  if (!isDragging.value || activePointerId.value !== event.pointerId) {
+    return
+  }
+
+  dragOffsetX.value = event.clientX - dragStartX.value
+}
+
+const finishSwipe = (event: PointerEvent) => {
+  if (!isDragging.value || activePointerId.value !== event.pointerId) {
+    return
+  }
+
+  const offset = dragOffsetX.value
+  const threshold = 96
+
+  if (offset <= -threshold) {
+    handleKnow()
+  }
+  else if (offset >= threshold) {
+    handleDontKnow()
+  }
+
+  resetDragState()
+}
+
+const onPointerUp = (event: PointerEvent) => {
+  finishSwipe(event)
+}
+
+const onPointerCancel = (event: PointerEvent) => {
+  finishSwipe(event)
+}
+
+watch(
+  () => props.cards,
+  (cards) => {
+    localCards.value = cards.map(cloneFlashcardDocument)
+    currentIndex.value = clampIndex(currentIndex.value)
+    syncUiState()
+  },
+  { immediate: true },
+)
+
+watch(
+  mdAndUp,
+  (value) => {
+    if (value) {
+      isListDialogOpen.value = false
+    }
+  },
+)
+</script>
+
+<template>
+  <VCard
+    class="mx-auto"
+    max-width="1600"
+    rounded="xl"
+    elevation="10"
+  >
+    <VCardText class="pa-4 pa-md-6">
+      <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
+        <div>
+          <p class="text-overline mb-1 text-medium-emphasis">{{ deckTitle }}</p>
+          <p class="text-body-medium mb-0 text-medium-emphasis">{{ deckSubtitle }}</p>
+        </div>
+
+        <div class="d-flex align-center ga-2 flex-wrap">
+          <VChip
+            color="primary"
+            variant="flat"
+          >
+            {{ currentPositionLabel }}
+          </VChip>
+          <VChip
+            color="secondary"
+            variant="tonal"
+          >
+            {{ progressValue }}%
+          </VChip>
+          <VBtn
+            color="primary"
+            variant="flat"
+            prepend-icon="mdi-view-list"
+            @click="openListDialog"
+          >
+            {{ t('flashcards.openList') }}
+          </VBtn>
+        </div>
+      </div>
+
+      <VProgressLinear
+        :model-value="progressValue"
+        color="primary"
+        rounded
+        height="10"
+        class="mb-5"
+      />
+
+      <VAlert
+        v-if="!hasCards"
+        type="info"
+        variant="tonal"
+        class="mb-0"
+      >
+        {{ t('flashcards.noCards') }}
+      </VAlert>
+
+      <template v-else>
+        <VRow dense>
+          <VCol
+            v-if="mdAndUp"
+            cols="12"
+            md="4"
+            lg="3"
+          >
+            <FlashcardsList
+              :cards="localCards"
+              :selected-index="currentIndex"
+              :selection-mode="props.selectionMode"
+              @select="selectCard"
+              @toggle-selection="(index) => emit('toggleSelection', index)"
+            />
+          </VCol>
+
+          <VCol
+            cols="12"
+            :md="mdAndUp ? 8 : 12"
+            :lg="mdAndUp ? 9 : 12"
+          >
+            <VCard
+              class="h-100"
+              variant="elevated"
+            >
+              <VCardText class="pa-4 pa-md-6">
+                <div
+                  class="mx-auto mb-6"
+                  style="max-width: 820px;"
+                >
+                  <div
+                    class="position-relative"
+                    style="min-height: 420px; perspective: 1600px; touch-action: pan-y;"
+                  >
+                    <div
+                      v-for="(card, stackIndex) in visibleDeckCards"
+                      :key="card.text + '-' + card.language + '-' + stackIndex"
+                      class="position-absolute top-0 start-0 w-100 h-100"
+                      :style="cardStackStyle(stackIndex)"
+                    >
+                      <template v-if="stackIndex === 0">
+                        <div
+                          class="position-relative h-100"
+                          :style="topCardMotionStyle"
+                          @pointerdown="onPointerDown"
+                          @pointermove="onPointerMove"
+                          @pointerup="onPointerUp"
+                          @pointercancel="onPointerCancel"
+                          @click="toggleFlip"
+                        >
+                          <div
+                            class="position-relative h-100"
+                            :style="{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)', transition: 'transform 260ms ease', transformStyle: 'preserve-3d' }"
+                          >
+                            <div :style="faceBaseStyle">
+                              <VCard
+                                class="h-100 d-flex flex-column"
+                                rounded="xl"
+                                color="primary"
+                              >
+                                <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
+                                  <div class="d-flex align-center justify-space-between ga-2">
+                                    <VChip
+                                      color="primary"
+                                      variant="flat"
+                                      prepend-icon="mdi-text-box-outline"
+                                    >
+                                      {{ t('flashcards.text') }}
+                                    </VChip>
+                                    <VChip
+                                      color="white"
+                                      variant="tonal"
+                                    >
+                                      {{ t('flashcards.swipeHint') }}
+                                    </VChip>
+                                  </div>
+
+                                  <div class="d-flex flex-column ga-3 flex-grow-1 justify-center">
+                                    <p class="text-overline mb-0 text-medium-emphasis">
+                                      {{ t('flashcards.text') }}
+                                    </p>
+                                    <p class="text-h4 text-md-h3 font-weight-bold text-wrap mb-0">
+                                      {{ card.text }}
+                                    </p>
+
+                                    <VDivider class="my-2" />
+
+                                    <div class="d-flex ga-2 flex-wrap">
+                                      <VChip
+                                        color="white"
+                                        variant="tonal"
+                                      >
+                                        {{ t('flashcards.language') }}: {{ card.language }}
+                                      </VChip>
+                                      <VChip
+                                        color="white"
+                                        variant="tonal"
+                                      >
+                                        {{ t('flashcards.level') }}: {{ t(`flashcards.levels.${card.level}`) }}
+                                      </VChip>
+                                    </div>
+                                  </div>
+
+                                  <p class="text-body-small text-medium-emphasis mb-0">
+                                    {{ t('flashcards.cardTapHint') }}
+                                  </p>
+                                </VCardText>
+                              </VCard>
+                            </div>
+
+                            <div :style="[faceBaseStyle, backFaceStyle]">
+                              <VCard
+                                class="h-100 d-flex flex-column"
+                                rounded="xl"
+                                color="success"
+                              >
+                                <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
+                                  <div class="d-flex align-center justify-space-between ga-2">
+                                    <VChip
+                                      color="success"
+                                      variant="flat"
+                                      prepend-icon="mdi-translate"
+                                    >
+                                      {{ t('flashcards.translation') }}
+                                    </VChip>
+                                    <VChip
+                                      color="white"
+                                      variant="tonal"
+                                    >
+                                      {{ card.isKnown ? t('flashcards.known') : t('flashcards.unknown') }}
+                                    </VChip>
+                                  </div>
+
+                                  <div class="d-flex flex-column ga-3 flex-grow-1 justify-center">
+                                    <p class="text-overline mb-0 text-medium-emphasis">
+                                      {{ t('flashcards.translation') }}
+                                    </p>
+                                    <p class="text-h4 text-md-h3 font-weight-bold text-wrap mb-0">
+                                      {{ card.translation }}
+                                    </p>
+
+                                    <VAlert
+                                      v-if="card.hint"
+                                      type="info"
+                                      variant="tonal"
+                                      class="mt-2"
+                                    >
+                                      {{ t('flashcards.hint') }}: {{ card.hint }}
+                                    </VAlert>
+                                  </div>
+
+                                  <p class="text-body-small text-medium-emphasis mb-0">
+                                    {{ t('flashcards.cardFlipHint') }}
+                                  </p>
+                                </VCardText>
+                              </VCard>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+
+                      <template v-else>
+                        <VCard
+                          class="h-100"
+                          rounded="xl"
+                          variant="outlined"
+                        >
+                          <VCardText class="d-flex flex-column justify-center h-100 pa-5 pa-md-6">
+                            <div class="d-flex align-center justify-space-between ga-2 mb-4">
+                              <VChip
+                                color="secondary"
+                                variant="tonal"
+                              >
+                                {{ t('flashcards.nextCard') }} {{ stackIndex }}
+                              </VChip>
+                              <VChip
+                                :color="card.isKnown ? 'success' : 'warning'"
+                                variant="tonal"
+                              >
+                                {{ card.isKnown ? t('flashcards.known') : t('flashcards.unknown') }}
+                              </VChip>
+                            </div>
+                            <p class="text-h5 font-weight-bold mb-2">
+                              {{ card.text }}
+                            </p>
+                            <p class="text-body-medium text-medium-emphasis mb-4">
+                              {{ card.language }} · {{ t(`flashcards.levels.${card.level}`) }}
+                            </p>
+                            <p class="text-body-small text-medium-emphasis mb-0">
+                              {{ t('flashcards.stackPreview') }}
+                            </p>
+                          </VCardText>
+                        </VCard>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-center ga-3 flex-wrap mb-6">
+                  <VBtn
+                    color="error"
+                    variant="outlined"
+                    prepend-icon="mdi-close-circle-outline"
+                    :disabled="!activeCard"
+                    @click="handleDontKnow"
+                  >
+                    {{ t('flashcards.unknown') }}
+                  </VBtn>
+                  <VBtn
+                    color="success"
+                    variant="flat"
+                    prepend-icon="mdi-check-circle-outline"
+                    :disabled="!activeCard"
+                    @click="handleKnow"
+                  >
+                    {{ t('flashcards.known') }}
+                  </VBtn>
+                </div>
+
+                <FlashcardDetailsPanel
+                  :card="activeCard"
+                  :allow-delete="!props.selectionMode"
+                  @save="handleSave"
+                  @delete="emit('delete')"
+                />
+              </VCardText>
+            </VCard>
+          </VCol>
+        </VRow>
+      </template>
+    </VCardText>
+
+    <FlashcardsListDialog
+      v-model="isListDialogOpen"
+      :cards="localCards"
+      :selected-index="currentIndex"
+      :is-desktop="mdAndUp"
+      :selection-mode="props.selectionMode"
+      @select="selectCard"
+      @toggle-selection="(index) => emit('toggleSelection', index)"
+    />
+  </VCard>
+</template>
