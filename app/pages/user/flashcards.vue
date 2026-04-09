@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 import FlashcardDeck from '../../components/FlashcardDeck.vue'
 import FlashcardsListBase from '../../components/flashcards/FlashcardsListBase.vue'
 import FlashcardDetailsPanel from '../../components/flashcards/FlashcardDetailsPanel.vue'
@@ -19,7 +20,10 @@ const snackbarStore = useSnackbarStore()
 const currentIndex = ref(0)
 const listIndex = ref(0)
 const isListViewVisible = ref(false)
+const isMobileDetailsDialogVisible = ref(false)
 const showKnownCards = ref(false)
+const { lgAndUp } = useDisplay()
+const isDesktop = computed(() => lgAndUp.value)
 
 const { flashcardsStore, currentCards, isSelectionMode, toggleSelectionAtIndex } = useFlashcardUpdate()
 
@@ -119,11 +123,16 @@ const openListView = () => {
 
 const closeListView = () => {
   syncDeckSelectionFromCardId(selectedListCard.value?.id)
+  isMobileDetailsDialogVisible.value = false
   isListViewVisible.value = false
 }
 
 const selectCardFromList = (index: number) => {
   listIndex.value = index
+
+  if (!isDesktop.value) {
+    isMobileDetailsDialogVisible.value = true
+  }
 }
 
 const selectGeneratedCardFromList = (index: number) => {
@@ -276,6 +285,7 @@ watch(
         </VCol>
 
         <VCol
+          v-if="isDesktop"
           cols="12"
           lg="7"
         >
@@ -360,6 +370,7 @@ watch(
         </VCol>
 
         <VCol
+          v-if="isDesktop"
           cols="12"
           lg="7"
         >
@@ -378,6 +389,31 @@ watch(
           </VCard>
         </VCol>
       </VRow>
+
+      <VDialog
+        v-model="isMobileDetailsDialogVisible"
+        max-width="720"
+      >
+        <VCard>
+          <VCardTitle class="d-flex align-center justify-space-between ga-2">
+            <span>{{ t('flashcards.cardTitle') }}</span>
+            <VBtn
+              icon="mdi-close"
+              variant="text"
+              @click="isMobileDetailsDialogVisible = false"
+            />
+          </VCardTitle>
+          <VDivider />
+          <VCardText class="px-4 py-4">
+            <FlashcardDetailsPanel
+              :card="selectedListCard"
+              :allow-delete="true"
+              @save="updateCard"
+              @delete="deleteCardById($event)"
+            />
+          </VCardText>
+        </VCard>
+      </VDialog>
     </template>
   </VContainer>
 </template>

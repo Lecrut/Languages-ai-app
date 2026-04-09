@@ -211,10 +211,10 @@ const finishSwipe = (event: PointerEvent) => {
   const threshold = 96
 
   if (offset <= -threshold) {
-    handleKnow()
+    handleDontKnow()
   }
   else if (offset >= threshold) {
-    handleDontKnow()
+    handleKnow()
   }
 
   resetDragState()
