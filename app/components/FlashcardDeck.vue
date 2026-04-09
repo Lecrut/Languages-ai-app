@@ -90,6 +90,14 @@ const moveToNextCardIfPossible = () => {
   setCurrentCard(currentIndex.value + 1)
 }
 
+const shouldAdvanceAfterStatusChange = (nextIsKnown: boolean) => {
+  if (props.selectionMode) {
+    return true
+  }
+
+  return nextIsKnown === showKnownCards.value
+}
+
 const handleKnow = () => {
   if (!activeCard.value) {
     return
@@ -103,7 +111,11 @@ const handleKnow = () => {
 
   updateCardAtCurrentIndex(updatedCard)
   emit('know', updatedCard)
-  moveToNextCardIfPossible()
+
+  if (shouldAdvanceAfterStatusChange(updatedCard.isKnown)) {
+    moveToNextCardIfPossible()
+  }
+
   syncUiState()
 }
 
@@ -120,13 +132,12 @@ const handleDontKnow = () => {
 
   updateCardAtCurrentIndex(updatedCard)
   emit('dontKnow', updatedCard)
-  moveToNextCardIfPossible()
-  syncUiState()
-}
 
-const handleSave = (updatedCard: FlashcardListItem) => {
-  updateCardAtCurrentIndex(updatedCard)
-  emit('save', updatedCard)
+  if (shouldAdvanceAfterStatusChange(updatedCard.isKnown)) {
+    moveToNextCardIfPossible()
+  }
+
+  syncUiState()
 }
 
 const toggleFlip = () => {

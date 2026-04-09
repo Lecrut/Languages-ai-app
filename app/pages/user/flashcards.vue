@@ -65,16 +65,24 @@ const updateCard = async (card: FlashcardListItem) => {
   await flashcardsStore.updateSavedCard(mergedCard)
 }
 
-const deleteCardById = async (cardId: string | undefined) => {
+const deleteCardById = async (cardOrId: FlashcardListItem | string | null | undefined) => {
+  console.log('[flashcards.vue] Delete called with:', cardOrId)
+  const cardId = typeof cardOrId === 'string' ? cardOrId : cardOrId?.id
+  console.log('[flashcards.vue] Extracted cardId:', cardId)
+
   if (!cardId) {
+    console.log('[flashcards.vue] Missing cardId, showing error')
+    snackbarStore.showError(t('flashcards.deleteError'))
     return
   }
 
   try {
+    console.log('[flashcards.vue] Calling deleteSavedCard with id:', cardId)
     await flashcardsStore.deleteSavedCard(cardId)
     snackbarStore.showSuccess(t('flashcards.deleteSuccess'))
   }
   catch (caughtError) {
+    console.error('[flashcards.vue] Delete error:', caughtError)
     const message = caughtError instanceof Error ? caughtError.message : t('flashcards.deleteError')
     snackbarStore.showError(message)
   }
@@ -118,14 +126,8 @@ const selectCardFromList = (index: number) => {
   listIndex.value = index
 }
 
-const openCardFromList = (index: number) => {
-  const selectedCard = currentCards.value[index]
-  if (!selectedCard) {
-    return
-  }
-
-  syncDeckSelectionFromCardId(selectedCard.id)
-  isListViewVisible.value = false
+const selectGeneratedCardFromList = (index: number) => {
+  currentIndex.value = Math.max(0, Math.min(index, Math.max(0, currentCards.value.length - 1)))
 }
 
 const saveSelectedCards = async () => {
@@ -265,7 +267,7 @@ watch(
                   :cards="currentCards"
                   :selected-index="currentIndex"
                   :selection-mode="isSelectionMode"
-                  @select="openCardFromList"
+                  @select="selectGeneratedCardFromList"
                   @toggle-selection="toggleSelectionAtIndex"
                 />
               </div>
@@ -370,7 +372,7 @@ watch(
                 :card="selectedListCard"
                 :allow-delete="true"
                 @save="updateCard"
-                @delete="deleteCardById(selectedListCard?.id)"
+                @delete="deleteCardById($event)"
               />
             </VCardText>
           </VCard>

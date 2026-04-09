@@ -3,6 +3,7 @@ import { computed, ref, toRef, watch } from 'vue'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useFlashcardEditor } from '../../composables/useFlashcardEditor'
 import { fromDateTimeLocalValue } from '../../helpers/flashcard-converters'
+import type { FlashcardDocument } from '../../models/schemas/flashcard.schema'
 import type { FlashcardListItem } from '../../stores/use-flashcards-store'
 import FlashcardDetailsViewMode from './FlashcardDetailsViewMode.vue'
 import FlashcardDetailsEditorMode from './FlashcardDetailsEditorMode.vue'
@@ -17,7 +18,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   save: [card: FlashcardListItem]
-  delete: []
+  delete: [card: FlashcardListItem]
 }>()
 
 const { t } = useI18n()
@@ -47,15 +48,24 @@ const handleSave = () => {
   }
 }
 
-const handleDraftCardUpdate = (card: FlashcardListItem) => {
-  draftCard.value = card
+const handleDraftCardUpdate = (card: FlashcardDocument) => {
+  if (!props.card) {
+    return
+  }
+
+  const nextDraftCard: FlashcardListItem = {
+    ...props.card,
+    ...card,
+  }
+
+  draftCard.value = nextDraftCard
 
   if (!isForceEditMode.value) {
     return
   }
 
   const liveUpdatedCard: FlashcardListItem = {
-    ...card,
+    ...nextDraftCard,
     knownAt: fromDateTimeLocalValue(knownAtInput.value),
   }
 
@@ -86,7 +96,13 @@ const openDeleteDialog = () => {
 }
 
 const handleDeleteConfirm = () => {
-  emit('delete')
+  if (!props.card) {
+    console.log('[FlashcardDetailsPanel] Delete: card is null')
+    return
+  }
+
+  console.log('[FlashcardDetailsPanel] Delete emit:', props.card)
+  emit('delete', props.card)
 }
 
 const editButtonTooltip = computed(() => {
@@ -115,7 +131,7 @@ watch(
 <template>
   <div class="d-flex flex-column ga-3 mb-4">
     <div class="d-flex align-center justify-space-between ga-3 flex-wrap">
-      <div class="text-h5 font-weight-bold">
+      <div class="text-body-large font-weight-bold">
         {{ t('flashcards.cardTitle') }}
       </div>
 

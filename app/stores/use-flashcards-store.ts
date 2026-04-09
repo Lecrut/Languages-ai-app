@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { Timestamp, collection, deleteDoc, doc, getDocs, query, serverTimestamp, updateDoc, where, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
+import { Timestamp, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
 import { AI_FLASHCARD_GENERATION_COUNT, AI_FLASHCARD_SYSTEM_INSTRUCTION, buildAiFlashcardPrompt, resolveFlashcardTranslationLanguage } from '../constants/ai-flashcard-prompts'
 import { FIREBASE_COLLECTIONS } from '../constants/firebase-collections'
 import { parseAiGeneratedFlashcardList } from '../models/schemas/ai-generated-flashcard.schema'
@@ -232,6 +232,7 @@ export const useFlashcardsStore = defineStore('flashcards', () => {
 
         const docRef = doc(collection(db, FIREBASE_COLLECTIONS.flashcards))
         batch.set(docRef, {
+          userId: uid,
           userRef: userReference,
           text: card.text,
           language: card.language,
@@ -287,15 +288,32 @@ export const useFlashcardsStore = defineStore('flashcards', () => {
   }
 
   const deleteSavedCard = async (cardId: string) => {
+    console.log('[use-flashcards-store] deleteSavedCard called with id:', cardId)
     sharedStore.startLoading()
 
     try {
-      await deleteDoc(doc(db, FIREBASE_COLLECTIONS.flashcards, cardId))
+      const docRef = doc(db, FIREBASE_COLLECTIONS.flashcards, cardId)
+      console.log('[use-flashcards-store] Deleting document:', docRef.path)
+
+      // Debug: read document before delete to check userRef
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists()) {
+        const docData = docSnap.data()
+        console.log('[use-flashcards-store] Document data before delete:', docData)
+        console.log('[use-flashcards-store] userRef:', docData?.userRef)
+      }
+      else {
+        console.warn('[use-flashcards-store] Document does not exist')
+      }
+
+      await deleteDoc(docRef)
+      console.log('[use-flashcards-store] Delete successful')
 
       savedCards.value = savedCards.value.filter(card => card.id !== cardId)
       refreshGeneratedDuplicateFlags()
     }
     catch (caughtError) {
+      console.error('[use-flashcards-store] Delete failed:', caughtError)
       sharedStore.setError(caughtError instanceof Error ? caughtError.message : 'Failed to delete flashcard')
       throw caughtError
     }
