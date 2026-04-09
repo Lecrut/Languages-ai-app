@@ -1,11 +1,15 @@
 import { z } from 'zod'
 import { TASK_TYPES } from '../types/task'
 import { LEARNING_LEVELS } from '../../constants/learning-levels'
+import { normalizeLearningLevel } from '../../helpers/normalize-learning-level'
 
 const baseGeneratedTaskSchema = z.object({
   targetLanguage: z.string().trim().min(2),
   topic: z.string().trim().min(1),
-  level: z.enum(LEARNING_LEVELS),
+  level: z.preprocess(
+    normalizeLearningLevel,
+    z.enum(LEARNING_LEVELS),
+  ),
   question: z.string().trim().min(1),
   correctAnswer: z.string().trim().min(1),
   hint: z.string().trim().min(1),
