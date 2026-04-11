@@ -189,6 +189,15 @@ onMounted(() => {
 
       <template v-if="smAndDown">
         <div class="d-flex align-center ga-2">
+          <VChip
+            v-if="isAuthenticated"
+            color="warning"
+            variant="flat"
+            prepend-icon="mdi-fire"
+          >
+            {{ currentStreakLabel }}
+          </VChip>
+
           <VBtn
             v-if="!isAuthenticated"
             size="small"

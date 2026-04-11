@@ -89,6 +89,7 @@ const handleLogin = async () => {
               :label="t('login.email')"
               :rules="emailRules"
               type="email"
+              autocomplete="email"
               variant="outlined"
               class="mb-3" />
             <VTextField
@@ -97,6 +98,7 @@ const handleLogin = async () => {
               :rules="passwordRules"
               :type="showPassword ? 'text' : 'password'"
               :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+              autocomplete="current-password"
               variant="outlined"
               @click:append-inner="showPassword = !showPassword"
             />

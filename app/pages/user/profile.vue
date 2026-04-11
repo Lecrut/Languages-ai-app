@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useUserProfileStore } from '../../stores/use-user-profile-store'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
@@ -13,6 +14,9 @@ definePageMeta({
 type AppLocale = 'pl' | 'en'
 
 const { t, locale, setLocale } = useI18n()
+const localePath = useLocalePath()
+const router = useRouter()
+const { smAndDown } = useDisplay()
 const authStore = useAuthStore()
 const userProfileStore = useUserProfileStore()
 const snackbarStore = useSnackbarStore()
@@ -144,6 +148,11 @@ const handleSaveProfile = async () => {
     // handled by store
   }
 }
+
+const handleLogout = async () => {
+  await authStore.logout()
+  await router.push(localePath('/auth/login'))
+}
 </script>
 
 <template>
@@ -154,6 +163,95 @@ const handleSaveProfile = async () => {
       lg="7">
       <VCard class="pa-2 pa-sm-4 pa-md-6">
         <VCardTitle class="text-headline-large text-center my-3">{{ t('profile.title') }}</VCardTitle>
+
+        <VCardActions
+          v-if="smAndDown"
+          class="justify-center pt-0 pb-4"
+        >
+          <div class="d-flex align-center justify-center ga-3">
+            <template v-if="isEditing">
+              <VBtn
+                icon="mdi-content-save"
+                color="primary"
+                variant="flat"
+                :disabled="!canSaveProfile || userProfileStore.loading"
+                :loading="userProfileStore.saving || userProfileStore.loading"
+                :title="t('profile.save')"
+                @click="handleSaveProfile"
+              />
+
+              <VBtn
+                icon="mdi-close"
+                color="secondary"
+                variant="tonal"
+                :disabled="userProfileStore.saving || userProfileStore.loading"
+                :title="t('profile.cancel')"
+                @click="cancelEditing"
+              />
+            </template>
+
+            <template v-else>
+              <VBtn
+                icon="mdi-pencil"
+                color="primary"
+                variant="flat"
+                :disabled="!profile || userProfileStore.loading || !isEmailVerified"
+                :title="t('profile.edit')"
+                @click="startEditing"
+              />
+
+              <VBtn
+                icon="mdi-logout"
+                color="secondary"
+                variant="tonal"
+                :disabled="authStore.loading"
+                :title="t('nav.logout')"
+                @click="handleLogout"
+              />
+            </template>
+          </div>
+        </VCardActions>
+
+        <VCardActions
+          v-else
+          class="justify-center pt-0 pb-4"
+        >
+          <div class="d-flex align-center justify-center ga-3">
+            <template v-if="isEditing">
+              <VBtn
+                color="primary"
+                prepend-icon="mdi-content-save"
+                variant="flat"
+                :disabled="!canSaveProfile || userProfileStore.loading"
+                :loading="userProfileStore.saving || userProfileStore.loading"
+                @click="handleSaveProfile"
+              >
+                {{ t('profile.save') }}
+              </VBtn>
+
+              <VBtn
+                color="secondary"
+                prepend-icon="mdi-close"
+                variant="tonal"
+                :disabled="userProfileStore.saving || userProfileStore.loading"
+                @click="cancelEditing"
+              >
+                {{ t('profile.cancel') }}
+              </VBtn>
+            </template>
+
+            <VBtn
+              v-else
+              color="primary"
+              prepend-icon="mdi-pencil"
+              variant="flat"
+              :disabled="!profile || userProfileStore.loading || !isEmailVerified"
+              @click="startEditing"
+            >
+              {{ t('profile.edit') }}
+            </VBtn>
+          </div>
+        </VCardActions>
 
         <VCardText class="d-flex flex-column ga-4">
           <VTextField
@@ -243,42 +341,6 @@ const handleSaveProfile = async () => {
           </div>
 
         </VCardText>
-
-        <VCardActions class="justify-center pb-4 pb-md-6 d-flex flex-column align-center ga-2">
-          <template v-if="isEditing">
-            <VBtn
-              color="primary"
-              size="large"
-              class="px-10"
-              :disabled="!canSaveProfile || userProfileStore.loading"
-              :loading="userProfileStore.saving || userProfileStore.loading"
-              @click="handleSaveProfile"
-            >
-              {{ t('profile.save') }}
-            </VBtn>
-
-            <VBtn
-              variant="text"
-              color="secondary"
-              :disabled="userProfileStore.saving || userProfileStore.loading"
-              @click="cancelEditing"
-            >
-              {{ t('profile.cancel') }}
-            </VBtn>
-          </template>
-
-          <VBtn
-            v-else
-            color="primary"
-            size="large"
-            class="px-10"
-            :disabled="!profile || userProfileStore.loading || !isEmailVerified"
-            @click="startEditing"
-          >
-            {{ t('profile.edit') }}
-          </VBtn>
-        </VCardActions>
-
         <VCardText class="pt-0 pb-6 text-body-medium text-medium-emphasis text-center">
           {{ t('profile.createdAt') }}: {{ createdAtFormatted }}
         </VCardText>
