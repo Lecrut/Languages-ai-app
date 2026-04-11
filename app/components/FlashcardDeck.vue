@@ -490,10 +490,10 @@ watch(
 
       <VCard
         v-else
-        class="h-100"
-        variant="elevated"
+        class="h-100 ma-0 pa-0"
+        variant="flat"
       >
-        <VCardText class="pa-4 pa-md-6">
+        <VCardText class="pa-0 pa-sm-6">
           <div class="d-flex justify-end align-center ga-2 mb-3">
             <VTooltip
               v-if="activeCard?.hint"
@@ -552,9 +552,10 @@ watch(
                     >
                       <div :style="faceBaseStyle">
                         <VCard
-                          class="h-100 d-flex flex-column bg-white"
+                          class="h-100 d-flex flex-column bg-surface"
                           rounded="xl"
-                          variant="elevated">
+                          elevation="4"
+                          variant="outlined">
                           <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
                             <div class="d-flex align-center justify-space-between ga-2">
                               <VChip
@@ -603,9 +604,10 @@ watch(
 
                       <div :style="[faceBaseStyle, backFaceStyle]">
                         <VCard
-                          class="h-100 d-flex flex-column bg-white"
+                          class="h-100 d-flex flex-column bg-surface"
                           rounded="xl"
-                          variant="elevated">
+                          elevation="4"
+                          variant="outlined">
                           <VCardText class="d-flex flex-column h-100 pa-5 pa-md-6 ga-4">
                             <div class="d-flex align-center justify-space-between ga-2">
                               <VChip
@@ -643,8 +645,9 @@ watch(
 
                 <template v-else>
                   <VCard
-                    class="h-100 bg-white"
+                    class="h-100 bg-surface"
                     rounded="xl"
+                    elevation="4"
                     variant="outlined">
                     <VCardText class="d-flex flex-column justify-center h-100 pa-5 pa-md-6">
                       <div class="d-flex align-center justify-space-between ga-2 mb-4">
