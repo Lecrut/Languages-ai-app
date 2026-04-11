@@ -21,6 +21,7 @@ const currentRoutePath = computed(() => route.path)
 const homePath = computed(() => localePath('/'))
 const nextLocale = computed(() => (locale.value === 'pl' ? 'en' : 'pl'))
 const nextLocaleLabel = computed(() => (nextLocale.value === 'pl' ? t('app.switchToPl') : t('app.switchToEn')))
+const currentProfileLanguage = computed(() => userProfileStore.profile?.appLanguage ?? null)
 const currentProfileTheme = computed(() => userProfileStore.profile?.appTheme ?? null)
 const currentStreakCount = computed(() => getDisplayCurrentStreakCount(streakInfoStore.streakInfo))
 const currentStreakLabel = computed(() => t('app.streakCurrent', {
@@ -126,6 +127,22 @@ const logout = async () => {
 }
 
 watch(
+  currentProfileLanguage,
+  async (appLanguage) => {
+    if (!appLanguage || (appLanguage !== 'pl' && appLanguage !== 'en')) {
+      return
+    }
+
+    if (locale.value === appLanguage) {
+      return
+    }
+
+    await setLocale(appLanguage)
+  },
+  { immediate: true },
+)
+
+watch(
   currentProfileTheme,
   (themeName) => {
     if (themeName === 'light' || themeName === 'dark') {
@@ -172,26 +189,6 @@ onMounted(() => {
 
       <template v-if="smAndDown">
         <div class="d-flex align-center ga-2">
-          <VChip
-            v-if="isAuthenticated"
-            color="warning"
-            variant="flat"
-            prepend-icon="mdi-fire"
-          >
-            {{ currentStreakLabel }}
-          </VChip>
-
-          <VBtn
-            v-if="!isAuthenticated"
-            size="small"
-            variant="outlined"
-            class="border-md"
-            prepend-icon="mdi-login"
-            :to="localePath('/auth/login')"
-          >
-            {{ t('nav.login') }}
-          </VBtn>
-
           <VBtn
             v-if="!isAuthenticated"
             size="small"
@@ -229,6 +226,28 @@ onMounted(() => {
         </div>
 
         <div class="d-flex ga-2 align-center">
+          <VBtn
+            v-if="!isAuthenticated"
+            size="small"
+            variant="outlined"
+            class="border-md"
+            :prepend-icon="isDarkTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny'"
+            @click="setTheme(isDarkTheme ? 'light' : 'dark')"
+          >
+            {{ isDarkTheme ? t('app.themeDark') : t('app.themeLight') }}
+          </VBtn>
+
+          <VBtn
+            v-if="!isAuthenticated"
+            size="small"
+            variant="outlined"
+            class="border-md"
+            prepend-icon="mdi-translate"
+            @click="toggleLocale"
+          >
+            {{ nextLocaleLabel }}
+          </VBtn>
+
           <template v-if="isAuthenticated">
             <VBtn
               v-for="item in navigationItems"

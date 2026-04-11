@@ -4,15 +4,17 @@ import { getFirebaseAuthErrorKey } from '../../helpers/firebase-auth-error-key'
 import { emailRule, minLengthRule, requiredRule } from '../../helpers/rules'
 import { useAuthStore } from '../../stores/use-auth-store'
 import { useSnackbarStore } from '../../stores/use-snackbar-store'
+import { useUserProfileStore } from '../../stores/use-user-profile-store'
 
 definePageMeta({
   middleware: 'guest',
 })
 
-const { t } = useI18n()
+const { t, setLocale } = useI18n()
 const localePath = useLocalePath()
 const authStore = useAuthStore()
 const snackbarStore = useSnackbarStore()
+const userProfileStore = useUserProfileStore()
 const router = useRouter()
 const { setPageTitle } = usePageHead()
 
@@ -57,6 +59,12 @@ const handleLogin = async () => {
 
   try {
     await authStore.login(email.value, password.value)
+
+    const profileLanguage = userProfileStore.profile?.appLanguage
+    if (profileLanguage === 'pl' || profileLanguage === 'en') {
+      await setLocale(profileLanguage)
+    }
+
     await router.push(localePath('/user'))
   }
   catch (caughtError) {
