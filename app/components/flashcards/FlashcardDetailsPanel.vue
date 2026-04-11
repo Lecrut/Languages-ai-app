@@ -131,7 +131,7 @@ watch(
 <template>
   <div class="d-flex flex-column ga-3 mb-4">
     <div class="d-flex align-center justify-space-between ga-3 flex-wrap">
-      <div class="text-body-large font-weight-bold">
+      <div class="text-title-large font-weight-bold">
         {{ t('flashcards.cardTitle') }}
       </div>
 

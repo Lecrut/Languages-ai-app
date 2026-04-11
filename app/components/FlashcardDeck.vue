@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { cloneFlashcardDocument } from '../helpers/flashcard-converters'
 import type { FlashcardListItem } from '../stores/use-flashcards-store'
 
@@ -35,15 +35,30 @@ const dragOffsetX = ref(0)
 const isDragging = ref(false)
 const activePointerId = ref<number | null>(null)
 const dragStartX = ref(0)
+const isSpeaking = ref(false)
 
 const totalCards = computed(() => localCards.value.length)
 const activeCard = computed(() => localCards.value[currentIndex.value] ?? null)
 const visibleDeckCards = computed(() => localCards.value.slice(currentIndex.value, currentIndex.value + 3))
 const hasCards = computed(() => totalCards.value > 0)
 const deckTitle = computed(() => props.title ?? t('flashcards.title'))
-const deckSubtitle = computed(() => props.subtitle ?? t('flashcards.subtitle'))
 const currentPositionLabel = computed(() => (totalCards.value ? `${Math.min(currentIndex.value + 1, totalCards.value)} / ${totalCards.value}` : '0 / 0'))
 const progressValue = computed(() => (totalCards.value ? Math.round(((currentIndex.value + 1) / totalCards.value) * 100) : 0))
+
+const speechLanguageByLabel: Record<string, string> = {
+  en: 'en-US',
+  english: 'en-US',
+  pl: 'pl-PL',
+  polish: 'pl-PL',
+  de: 'de-DE',
+  german: 'de-DE',
+  es: 'es-ES',
+  spanish: 'es-ES',
+  fr: 'fr-FR',
+  french: 'fr-FR',
+  it: 'it-IT',
+  italian: 'it-IT',
+}
 
 const clampIndex = (index: number) => {
   if (!localCards.value.length) {
@@ -228,6 +243,71 @@ const onPointerCancel = (event: PointerEvent) => {
   finishSwipe(event)
 }
 
+const resolveSpeechLanguage = (language: string | null | undefined) => {
+  if (!language) {
+    return 'en-US'
+  }
+
+  return speechLanguageByLabel[language.toLowerCase()] ?? 'en-US'
+}
+
+const stopSpeaking = () => {
+  if (!import.meta.client || !('speechSynthesis' in window)) {
+    return
+  }
+
+  window.speechSynthesis.cancel()
+  isSpeaking.value = false
+}
+
+const speakCardText = (text: string, language: string | null | undefined) => {
+  if (!import.meta.client || !('speechSynthesis' in window)) {
+    return
+  }
+
+  if (!text.trim()) {
+    return
+  }
+
+  window.speechSynthesis.cancel()
+
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = resolveSpeechLanguage(language)
+  utterance.rate = 0.9
+
+  utterance.onstart = () => {
+    isSpeaking.value = true
+  }
+
+  utterance.onend = () => {
+    isSpeaking.value = false
+  }
+
+  utterance.onerror = () => {
+    isSpeaking.value = false
+  }
+
+  window.speechSynthesis.speak(utterance)
+}
+
+const toggleSpeakActiveCardText = () => {
+  const card = activeCard.value
+  if (!card) {
+    return
+  }
+
+  if (isSpeaking.value) {
+    stopSpeaking()
+    return
+  }
+
+  speakCardText(card.text, card.language)
+}
+
+onBeforeUnmount(() => {
+  stopSpeaking()
+})
+
 watch(
   () => props.cards,
   (cards) => {
@@ -247,14 +327,113 @@ watch(
     elevation="10"
   >
     <VCardText class="pa-4 pa-md-6">
-      <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
-        <div>
-          <p class="text-h4 text-md-h3 font-weight-bold mb-1">{{ deckTitle }}</p>
-          <p class="text-body-large mb-0 text-medium-emphasis">{{ deckSubtitle }}</p>
+      <div class="mb-4">
+        <div class="d-none d-lg-flex align-center justify-space-between ga-3">
+          <p class="text-title-large font-weight-bold my-1">{{ deckTitle }}</p>
+
+          <div class="d-flex align-center ga-2 flex-nowrap">
+            <VBtn
+              color="primary"
+              variant="flat"
+              prepend-icon="mdi-view-list"
+              @click="emit('openList')"
+            >
+              {{ t('flashcards.listTitle') }}
+            </VBtn>
+            <VChip
+              :color="showKnownCards ? 'grey' : 'error'"
+              variant="tonal"
+            >
+              {{ t('flashcards.unknown') }}
+            </VChip>
+            <VSwitch
+              v-model="showKnownCards"
+              color="success"
+              hide-details
+              inset
+              density="compact"
+              class="ma-0"
+            />
+            <VChip
+              :color="showKnownCards ? 'success' : 'grey'"
+              variant="tonal"
+            >
+              {{ t('flashcards.known') }}
+            </VChip>
+            <VChip
+              color="primary"
+              variant="flat">
+              {{ currentPositionLabel }}
+            </VChip>
+            <VChip
+              color="secondary"
+              variant="tonal">
+              {{ progressValue }}%
+            </VChip>
+          </div>
         </div>
 
-        <div class="d-flex align-center ga-2 flex-wrap">
-          <div class="d-flex align-center ga-2 flex-wrap">
+        <div class="d-none d-sm-flex d-lg-none flex-column ga-3">
+          <div class="d-flex align-center justify-space-between ga-2">
+            <p class="text-title-large font-weight-bold my-1">{{ deckTitle }}</p>
+            <VBtn
+              color="primary"
+              variant="flat"
+              prepend-icon="mdi-view-list"
+              @click="emit('openList')"
+            >
+              {{ t('flashcards.listTitle') }}
+            </VBtn>
+          </div>
+
+          <div class="d-flex align-center justify-end ga-2 flex-wrap">
+            <VChip
+              :color="showKnownCards ? 'grey' : 'error'"
+              variant="tonal"
+            >
+              {{ t('flashcards.unknown') }}
+            </VChip>
+            <VSwitch
+              v-model="showKnownCards"
+              color="success"
+              hide-details
+              inset
+              density="compact"
+              class="ma-0"
+            />
+            <VChip
+              :color="showKnownCards ? 'success' : 'grey'"
+              variant="tonal"
+            >
+              {{ t('flashcards.known') }}
+            </VChip>
+            <VChip
+              color="primary"
+              variant="flat">
+              {{ currentPositionLabel }}
+            </VChip>
+            <VChip
+              color="secondary"
+              variant="tonal">
+              {{ progressValue }}%
+            </VChip>
+          </div>
+        </div>
+
+        <div class="d-flex d-sm-none flex-column ga-3">
+          <div class="d-flex align-center justify-space-between ga-2">
+            <p class="text-title-large font-weight-bold my-1">{{ deckTitle }}</p>
+            <VBtn
+              color="primary"
+              variant="flat"
+              prepend-icon="mdi-view-list"
+              @click="emit('openList')"
+            >
+              {{ t('flashcards.listTitle') }}
+            </VBtn>
+          </div>
+
+          <div class="d-flex align-center justify-center ga-2 flex-wrap">
             <VChip
               :color="showKnownCards ? 'grey' : 'error'"
               variant="tonal"
@@ -276,26 +455,19 @@ watch(
               {{ t('flashcards.known') }}
             </VChip>
           </div>
-          <VChip
-            color="primary"
-            variant="flat">
-            {{ currentPositionLabel }}
-          </VChip>
-          <VChip
-            color="secondary"
-            variant="tonal">
-            {{ progressValue }}%
-          </VChip>
-          <VBtn
-            color="primary"
-            variant="flat"
-            prepend-icon="mdi-view-list"
-            size="large"
-            class="font-weight-bold text-none"
-            @click="emit('openList')"
-          >
-            {{ t('flashcards.listTitle') }}
-          </VBtn>
+
+          <div class="d-flex align-center justify-center ga-2 flex-wrap">
+            <VChip
+              color="primary"
+              variant="flat">
+              {{ currentPositionLabel }}
+            </VChip>
+            <VChip
+              color="secondary"
+              variant="tonal">
+              {{ progressValue }}%
+            </VChip>
+          </div>
         </div>
       </div>
 
@@ -322,6 +494,34 @@ watch(
         variant="elevated"
       >
         <VCardText class="pa-4 pa-md-6">
+          <div class="d-flex justify-end align-center ga-2 mb-3">
+            <VTooltip
+              v-if="activeCard?.hint"
+              :text="`${t('flashcards.hint')}: ${activeCard.hint}`"
+              location="left"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <VBtn
+                  v-bind="tooltipProps"
+                  icon="mdi-help-circle-outline"
+                  variant="text"
+                  color="primary"
+                  :disabled="!activeCard"
+                />
+              </template>
+            </VTooltip>
+
+            <VBtn
+              :icon="isSpeaking ? 'mdi-stop-circle-outline' : 'mdi-play-circle-outline'"
+              variant="text"
+              color="primary"
+              :disabled="!activeCard"
+              :aria-label="t('flashcards.playAudio')"
+              :title="t('flashcards.playAudio')"
+              @click="toggleSpeakActiveCardText"
+            />
+          </div>
+
           <div
             class="mx-auto mb-6"
             style="max-width: 740px;"
@@ -363,35 +563,18 @@ watch(
                                 prepend-icon="mdi-text-box-outline">
                                 {{ t('flashcards.text') }}
                               </VChip>
-                              <div class="d-flex align-center ga-1">
-                                <VTooltip
-                                  v-if="card.hint"
-                                  :text="`${t('flashcards.hint')}: ${card.hint}`"
-                                  location="bottom"
-                                >
-                                  <template #activator="{ props: tooltipProps }">
-                                    <VBtn
-                                      v-bind="tooltipProps"
-                                      icon="mdi-help-circle-outline"
-                                      variant="text"
-                                      size="small"
-                                      color="primary"
-                                    />
-                                  </template>
-                                </VTooltip>
-                                <VChip
-                                  color="secondary"
-                                  variant="tonal">
-                                  {{ t('flashcards.swipeHint') }}
-                                </VChip>
-                              </div>
+                              <VChip
+                                color="secondary"
+                                variant="tonal">
+                                {{ t('flashcards.swipeHint') }}
+                              </VChip>
                             </div>
 
                             <div class="d-flex flex-column ga-3 flex-grow-1 justify-center">
                               <p class="text-overline mb-0 text-medium-emphasis">
                                 {{ t('flashcards.text') }}
                               </p>
-                              <p class="text-h3 text-md-h2 font-weight-bold text-wrap mb-0">
+                              <p class="text-headline-medium text-md-h2 font-weight-bold text-wrap mb-0">
                                 {{ card.text }}
                               </p>
 
@@ -442,7 +625,7 @@ watch(
                               <p class="text-overline mb-0 text-medium-emphasis">
                                 {{ t('flashcards.translation') }}
                               </p>
-                              <p class="text-h4 text-md-h3 font-weight-bold text-wrap mb-0">
+                              <p class="text-headline-medium text-md-h2 font-weight-bold text-wrap mb-0">
                                 {{ card.translation }}
                               </p>
 
@@ -492,7 +675,7 @@ watch(
             </div>
           </div>
 
-          <div class="d-flex justify-center ga-3 flex-wrap mb-6">
+          <div class="d-flex justify-center align-center ga-3 flex-wrap mb-6">
             <VBtn
               color="error"
               variant="outlined"
@@ -502,6 +685,7 @@ watch(
             >
               {{ t('flashcards.unknown') }}
             </VBtn>
+
             <VBtn
               color="success"
               variant="flat"

@@ -186,6 +186,12 @@ const closeSession = async () => {
   await router.push(localePath('/user'))
 }
 
+const cancelRecoverableSession = () => {
+  taskSessionStore.reset()
+  isResultSaved.value = false
+  selectedMode.value = null
+}
+
 const resendVerificationEmail = async () => {
   try {
     await authStore.resendVerificationEmail()
@@ -275,6 +281,16 @@ watch(
             >
               {{ t('play.resume') }}
             </VBtn>
+
+            <div class="mt-3">
+              <VBtn
+                color="error"
+                variant="text"
+                @click="cancelRecoverableSession"
+              >
+                {{ t('play.cancelSession') }}
+              </VBtn>
+            </div>
           </VCardText>
         </template>
 
@@ -291,8 +307,8 @@ watch(
           >
             <VCardText class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3">
               <div>
-                <p class="text-body-large font-weight-bold mb-1">{{ t('play.flashcardsTitle') }}</p>
-                <p class="text-body-small mb-0 text-medium-emphasis">{{ t('play.flashcardsDescription') }}</p>
+                <p class="text-title-medium font-weight-bold my-1">{{ t('play.flashcardsTitle') }}</p>
+                <p class="text-body-medium mb-0 text-medium-emphasis">{{ t('play.flashcardsDescription') }}</p>
               </div>
 
               <VBtn
