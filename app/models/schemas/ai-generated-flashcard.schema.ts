@@ -17,11 +17,14 @@ export const parseAiGeneratedFlashcardList = (rawJson: string, expectedCount: nu
   const parsedJson = JSON.parse(rawJson)
   const parsed = generatedFlashcardListSchema.parse(parsedJson)
 
-  if (parsed.cards.length !== expectedCount) {
-    throw new Error(`AI returned ${parsed.cards.length} flashcards, expected ${expectedCount}.`)
+  if (parsed.cards.length < expectedCount) {
+    throw new Error(`AI returned ${parsed.cards.length} flashcards, expected at least ${expectedCount}.`)
   }
 
-  return parsed
+  return {
+    ...parsed,
+    cards: parsed.cards.slice(0, expectedCount),
+  }
 }
 
 export type AiGeneratedFlashcard = z.infer<typeof generatedFlashcardSchema>

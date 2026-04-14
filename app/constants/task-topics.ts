@@ -11,6 +11,7 @@ export const TASK_TOPICS = [
   { id: 'technology', promptTopic: 'Technology, apps, and online communication' },
   { id: 'education', promptTopic: 'Education, courses, and learning goals' },
   { id: 'social-life', promptTopic: 'Social life, plans, and relationships' },
+  { id: 'idioms-and-phrasals', promptTopic: 'Idioms, phrasal verbs, sayings, and fixed expressions' },
   { id: 'problem-solving', promptTopic: 'Everyday problems, complaints, and solutions' },
   { id: 'appointments', promptTopic: 'Appointments, schedules, and time management' },
 ] as const
