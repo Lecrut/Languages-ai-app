@@ -66,14 +66,32 @@ export const useFlashcardsStore = defineStore('flashcards', () => {
 
     try {
       const userReference = doc(db, FIREBASE_COLLECTIONS.users, uid)
-      const snapshot = await getDocs(query(
+      const byUserRefQuery = query(
         collection(db, FIREBASE_COLLECTIONS.flashcards),
         where('userRef', '==', userReference),
-      ))
+      )
+      const byUserIdQuery = query(
+        collection(db, FIREBASE_COLLECTIONS.flashcards),
+        where('userId', '==', uid),
+      )
 
-      const nextSavedCards = snapshot.docs.map((flashcardDocument) => {
+      const [byUserRefSnapshot, byUserIdSnapshot] = await Promise.all([
+        getDocs(byUserRefQuery),
+        getDocs(byUserIdQuery),
+      ])
+
+      const docsById = new Map<string, (typeof byUserRefSnapshot.docs)[number]>()
+
+      byUserRefSnapshot.docs.forEach((flashcardDocument) => {
+        docsById.set(flashcardDocument.id, flashcardDocument)
+      })
+      byUserIdSnapshot.docs.forEach((flashcardDocument) => {
+        docsById.set(flashcardDocument.id, flashcardDocument)
+      })
+
+      const nextSavedCards = Array.from(docsById.values()).map((flashcardDocument) => {
         const data = flashcardDocument.data() as {
-          userRef: DocumentReference<DocumentData>
+          userRef?: DocumentReference<DocumentData>
           text: string
           language: string
           level: FlashcardDocument['level']
@@ -94,7 +112,7 @@ export const useFlashcardsStore = defineStore('flashcards', () => {
 
         return {
           id: flashcardDocument.id,
-          userRef: data.userRef,
+          userRef: data.userRef ?? userReference,
           text: data.text,
           language: data.language,
           level: data.level,

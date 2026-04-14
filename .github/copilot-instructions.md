@@ -32,6 +32,12 @@ Your objective is to build a robust, scalable, and beautifully structured person
 - **Pinia:** MUST be **Setup Stores** (Composition API). Return refs and functions. NEVER use the Options API (`state`, `actions`) or `this.`.
 - **Shared Store Pattern:** All feature stores should use `useSharedStore()` for global loading and error state unless there is a clear exception. Keep store-specific refs only for feature-specific state.
 
+# Error Handling Policy (Strict)
+- For expected UX/business cases (no data, empty selection, missing profile, validation mismatch), do NOT rely on raw `throw` as the primary control flow.
+- In stores/composables, prefer setting `useSharedStore().setError(...)` and return a controlled result (`Result` type or `null`/empty collection) that UI can handle gracefully.
+- Reserve `throw` for truly exceptional failures (network/provider/runtime failures) after shared error state is updated.
+- Always pair async operations with shared loading lifecycle (`startLoading`/`stopLoading`) and keep user-facing messaging consistent via snackbar/UI state.
+
 # Vue SFC Structure
 1. `<script setup lang="ts">` (Top)
 2. `<template>` (Middle)

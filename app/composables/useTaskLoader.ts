@@ -1,7 +1,9 @@
 import { ref, computed } from 'vue'
 import {
   collection,
+  doc,
   getDocs,
+  orderBy,
   query,
   where,
   limit,
@@ -26,6 +28,10 @@ interface UseTaskLoaderParams {
 const normalizeLanguageLabel = (value: string) => value.trim().toLowerCase()
 
 const normalizeLevel = (value: string) => value.trim().toLowerCase()
+
+const shuffleItems = <T>(items: T[]) => [...items].sort(() => Math.random() - 0.5)
+
+const unique = <T>(items: T[]) => [...new Set(items)]
 
 const matchesPreferredProfile = (task: TaskSessionTask, preferredSubject: string, preferredLevel: string) => {
   const normalizedPreferredSubject = normalizeLanguageLabel(preferredSubject)
@@ -98,6 +104,50 @@ export function useTaskLoader() {
     }
   }
 
+  const fetchTaskIdsFromLatestSessions = async (
+    userId: string,
+    isPassed: boolean,
+  ): Promise<string[]> => {
+    try {
+      const userReference = doc(db, FIREBASE_COLLECTIONS.users, userId)
+      const resultsCollection = collection(db, FIREBASE_COLLECTIONS.results)
+      const latestSessionsQuery = query(
+        resultsCollection,
+        where('userReference', '==', userReference),
+        orderBy('date', 'desc'),
+        limit(10),
+      )
+      const snapshot = await getDocs(latestSessionsQuery)
+
+      const orderedTaskIds: string[] = []
+      snapshot.docs.forEach((sessionDocument) => {
+        const data = sessionDocument.data() as {
+          task?: Array<{
+            taskReference?: { id?: string }
+            isPassed?: boolean
+          }>
+        }
+
+        ;(data.task ?? []).forEach((taskEntry) => {
+          if (Boolean(taskEntry.isPassed) !== isPassed) {
+            return
+          }
+
+          const taskId = taskEntry.taskReference?.id
+          if (taskId) {
+            orderedTaskIds.push(taskId)
+          }
+        })
+      })
+
+      return unique(orderedTaskIds)
+    }
+    catch (err) {
+      console.error('Error fetching task IDs from latest sessions:', err)
+      throw err
+    }
+  }
+
   const generateAiTasks = async (promptParams: Omit<AiTaskPromptParams, 'tasksCount'>, count: number): Promise<TaskSessionTask[]> => {
     try {
       const { parseAiGeneratedTaskList } = await import('../models/schemas/ai-generated-task.schema')
@@ -144,6 +194,34 @@ export function useTaskLoader() {
         return await generateAiTasks(params.aiPromptParams, params.tasksCount)
       }
 
+      if (params.mode === 'improve' || params.mode === 'repeat') {
+        const isPassed = params.mode === 'repeat'
+        const latestSessionTaskIds = await fetchTaskIdsFromLatestSessions(params.userId, isPassed)
+        const fallbackTaskIds = latestSessionTaskIds.length === 0
+          ? await fetchTaskIdsByResultStatus(params.userId, isPassed)
+          : []
+        const sourceTaskIds = unique([
+          ...latestSessionTaskIds,
+          ...fallbackTaskIds,
+        ])
+
+        const fetchedTasks = await fetchTaskDocuments(sourceTaskIds)
+        const matchingTasks = fetchedTasks.filter(task => matchesPreferredProfile(
+          task,
+          params.preferredSubject,
+          params.preferredLevel,
+        ))
+        const randomizedTasks = shuffleItems(matchingTasks)
+        const selectedTasks = randomizedTasks.slice(0, params.tasksCount)
+
+        if (selectedTasks.length === 0) {
+          const modeLabel = params.mode === 'repeat' ? 'passed' : 'failed'
+          throw new Error(`No ${modeLabel} tasks found for your current language and level.`)
+        }
+
+        return selectedTasks
+      }
+
       let taskIds: string[] = []
 
       if (params.mode === 'new') {
@@ -160,17 +238,16 @@ export function useTaskLoader() {
           taskIds = []
         }
       }
-      else if (params.mode === 'improve') {
-        taskIds = await fetchTaskIdsByResultStatus(params.userId, false)
-      }
-      else if (params.mode === 'repeat') {
-        taskIds = await fetchTaskIdsByResultStatus(params.userId, true)
-      }
 
       let tasks: TaskSessionTask[] = []
       if (taskIds.length > 0) {
-        const fetchedTasks = await fetchTaskDocuments(taskIds.slice(0, params.tasksCount))
-        tasks = fetchedTasks.filter(task => matchesPreferredProfile(task, params.preferredSubject, params.preferredLevel))
+        const fetchedTasks = await fetchTaskDocuments(taskIds)
+        const matchingTasks = fetchedTasks.filter(task => matchesPreferredProfile(
+          task,
+          params.preferredSubject,
+          params.preferredLevel,
+        ))
+        tasks = shuffleItems(matchingTasks).slice(0, params.tasksCount)
       }
 
       const remainingCount = params.tasksCount - tasks.length
