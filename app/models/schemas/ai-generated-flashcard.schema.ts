@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { AI_FLASHCARD_MAX_REASONABLE_WORDS } from '../../constants/ai-flashcard-prompts'
 import { LEARNING_LEVELS } from '../../constants/learning-levels'
 
 const generatedFlashcardSchema = z.object({
@@ -13,17 +14,34 @@ const generatedFlashcardListSchema = z.object({
   cards: z.array(generatedFlashcardSchema).min(1),
 })
 
+const countWords = (value: string) => value
+  .trim()
+  .split(/\s+/)
+  .filter(Boolean)
+  .length
+
+const looksLikeSentence = (value: string) => /[.!?;:]/.test(value)
+
+const isReasonableFlashcardText = (value: string) => {
+  if (looksLikeSentence(value)) {
+    return false
+  }
+
+  return countWords(value) <= AI_FLASHCARD_MAX_REASONABLE_WORDS
+}
+
 export const parseAiGeneratedFlashcardList = (rawJson: string, expectedCount: number) => {
   const parsedJson = JSON.parse(rawJson)
   const parsed = generatedFlashcardListSchema.parse(parsedJson)
+  const filteredCards = parsed.cards.filter(card => isReasonableFlashcardText(card.text))
 
-  if (parsed.cards.length < expectedCount) {
-    throw new Error(`AI returned ${parsed.cards.length} flashcards, expected at least ${expectedCount}.`)
+  if (filteredCards.length < expectedCount) {
+    throw new Error(`AI returned ${filteredCards.length} concise flashcards, expected at least ${expectedCount}.`)
   }
 
   return {
     ...parsed,
-    cards: parsed.cards.slice(0, expectedCount),
+    cards: filteredCards.slice(0, expectedCount),
   }
 }
 
