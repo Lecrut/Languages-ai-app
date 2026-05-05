@@ -27,6 +27,7 @@ const { t } = useI18n()
 
 const selectedArrangeWords = ref<string[]>([])
 const shuffledArrangeWords = ref<string[]>([])
+const shuffledOptions = ref<string[]>([])
 const isSpeaking = ref(false)
 const { mdAndUp } = useDisplay()
 
@@ -85,6 +86,7 @@ watch(
   () => {
     selectedArrangeWords.value = []
     shuffledArrangeWords.value = [...(props.task?.options ?? [])].sort(() => Math.random() - 0.5)
+    shuffledOptions.value = [...(props.task?.options ?? [])].sort(() => Math.random() - 0.5)
   },
   { immediate: true },
 )
@@ -117,6 +119,13 @@ const arrangeWordOptions = computed(() => shuffledArrangeWords.value.length > 0
   ? shuffledArrangeWords.value
   : (props.task?.options ?? []),
 )
+
+const taskOptions = computed(() => {
+  if (props.task?.type === 'arrange_words') {
+    return arrangeWordOptions.value
+  }
+  return shuffledOptions.value.length > 0 ? shuffledOptions.value : (props.task?.options ?? [])
+})
 
 const submitArrangeAnswer = () => {
   if (!canSubmitArrangeAnswer.value || isAnswered.value) {
@@ -396,27 +405,27 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
               </div>
             </div>
 
-            <VRow
-              v-else-if="!isAnswered"
-              density="compact">
-              <VCol
-                v-for="(option, optionIndex) in task?.options"
-                :key="`${option}-${optionIndex}`"
-                cols="12"
-                sm="6"
-              >
-                <VBtn
-                  block
-                  class="text-none text-wrap text-body-small py-2 whitespace-normal h-auto"
-                  :color="optionColors[optionIndex % optionColors.length]"
-                  variant="flat"
-                  :disabled="isAnswered"
-                  @click="submitOptionAnswer(option)"
+              <VRow
+                v-else-if="!isAnswered"
+                density="compact">
+                <VCol
+                  v-for="(option, optionIndex) in taskOptions"
+                  :key="`${option}-${optionIndex}`"
+                  cols="12"
+                  sm="6"
                 >
-                  {{ option }}
-                </VBtn>
-              </VCol>
-            </VRow>
+                  <VBtn
+                    block
+                    class="text-none text-wrap text-body-small py-2 whitespace-normal h-auto"
+                    :color="optionColors[optionIndex % optionColors.length]"
+                    variant="flat"
+                    :disabled="isAnswered"
+                    @click="submitOptionAnswer(option)"
+                  >
+                    {{ option }}
+                  </VBtn>
+                </VCol>
+              </VRow>
 
             <div
               v-if="isAnswered"
