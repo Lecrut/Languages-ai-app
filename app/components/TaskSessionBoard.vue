@@ -405,27 +405,27 @@ const speakQuestionWithAnswer = (question: string, answer: string) => {
               </div>
             </div>
 
-              <VRow
-                v-else-if="!isAnswered"
-                density="compact">
-                <VCol
-                  v-for="(option, optionIndex) in taskOptions"
-                  :key="`${option}-${optionIndex}`"
-                  cols="12"
-                  sm="6"
+            <VRow
+              v-else-if="!isAnswered"
+              density="compact">
+              <VCol
+                v-for="(option, optionIndex) in taskOptions"
+                :key="`${option}-${optionIndex}`"
+                cols="12"
+                sm="6"
+              >
+                <VBtn
+                  block
+                  class="text-none text-wrap text-body-small py-2 whitespace-normal h-auto"
+                  :color="optionColors[optionIndex % optionColors.length]"
+                  variant="flat"
+                  :disabled="isAnswered"
+                  @click="submitOptionAnswer(option)"
                 >
-                  <VBtn
-                    block
-                    class="text-none text-wrap text-body-small py-2 whitespace-normal h-auto"
-                    :color="optionColors[optionIndex % optionColors.length]"
-                    variant="flat"
-                    :disabled="isAnswered"
-                    @click="submitOptionAnswer(option)"
-                  >
-                    {{ option }}
-                  </VBtn>
-                </VCol>
-              </VRow>
+                  {{ option }}
+                </VBtn>
+              </VCol>
+            </VRow>
 
             <div
               v-if="isAnswered"
