@@ -1,8 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import vuetify from 'vite-plugin-vuetify'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  ssr: false,
+  ssr: true,
 
   app: {
     head: {
@@ -14,7 +16,7 @@ export default defineNuxtConfig({
       meta: [
         {
           name: 'description',
-          content: 'Personalized English learning app with AI generated tasks',
+          content: 'Personalized languages learning app with AI generated tasks',
         },
       ],
       link: [
@@ -64,6 +66,7 @@ export default defineNuxtConfig({
       'Open Sans': [400, 600, 700],
       'Plus Jakarta Sans': [400, 500, 600, 700],
     },
+    subsets: ['latin'],
     display: 'swap',
   },
 
@@ -119,6 +122,9 @@ export default defineNuxtConfig({
         'firebase/app',
       ],
     },
+    plugins: [
+      vuetify({ autoImport: true }),
+    ],
     ssr: {
       noExternal: ['vuetify']
     }
